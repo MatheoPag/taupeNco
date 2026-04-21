@@ -3,7 +3,7 @@ class Pawn:
         self.id = id
         self.color = color
         self._position = None
-        self.on_board = True
+        self.on_board = False
         self.moves_history = []
     
     def get_position(self) -> tuple[int, int] | None:
