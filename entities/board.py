@@ -84,18 +84,38 @@ class Board:
                 grid[(q, r)] = 0
         return grid
 
-    def print_grid(self) -> None:
-        """Print the grid disposition, for dev only"""
+    def to_2d_grid(self) -> list[list]:
+        """Projette la grille axiale (q, r) dans une liste 2D [ligne][colonne].
+
+        Les cases hors hexagone valent None
+        Les cases valides gardent leur valeur (0, 'X', 'S').
+        A utiliser pour dessiner la grille dans
+        tkinter.
+
+        Conversion axial -> 2D :
+            ligne   = r + radius
+            colonne = 2 * q + r + 2 * radius
+        """
         total_cols = 2 * self.size - 1
-        for r in range(-self.radius, self.radius + 1):
-            line = ["  "] * total_cols
-            for q in range(-self.radius, self.radius + 1):
-                if (q, r) not in self.grid:
-                    continue
-                col = 2 * q + r + 2 * self.radius
-                value = self.grid[(q, r)]
-                line[col] = str(".").rjust(2) if value == 0 else str(value).rjust(2)
-            print(" ".join(line))
+        grid_2d = [[None] * total_cols for _ in range(self.size)]
+        for (q, r), value in self.grid.items():
+            ligne = r + self.radius
+            colonne = 2 * q + r + 2 * self.radius
+            grid_2d[ligne][colonne] = value
+        return grid_2d
+
+    def print_grid(self) -> None:
+        """Affiche la grille (dev only)"""
+        for ligne in self.to_2d_grid():
+            cells = []
+            for value in ligne:
+                if value is None:
+                    cells.append("  ")
+                elif value == 0:
+                    cells.append(" .")
+                else:
+                    cells.append(str(value).rjust(2))
+            print(" ".join(cells))
             print()
 
 class BoardPile:
@@ -116,6 +136,4 @@ class BoardPile:
 
 if __name__ == "__main__":
     board_pile = BoardPile(["green", "red", "yellow", "blue"], 9)
-    board_pile.get_top().print_grid()
-    board_pile.get_top().rotate_60()
     board_pile.get_top().print_grid()
