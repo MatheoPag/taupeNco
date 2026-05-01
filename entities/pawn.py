@@ -16,5 +16,11 @@ class Pawn:
         self._position[0] += x
         self._position[1] += y
         self.moves_history.append((x, y))
+
+    def restore(self, position: tuple[int, int] | list | None, on_board: bool, moves_history: list) -> None:
+        """Ecrase l'etat complet du pion (utilise pour le chargement d'une save)."""
+        self._position = tuple(position) if position is not None else None
+        self.on_board = on_board
+        self.moves_history = [tuple(m) for m in moves_history]
     
 

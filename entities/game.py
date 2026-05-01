@@ -11,6 +11,10 @@ class Game:
         self.boards = board.BoardPile(colors, board_size)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
 
+    def set_golden_shovel(self, shovel) -> None:
+        """Remplace la golden shovel (utilise pour le chargement d'une save)."""
+        self.golden_shovel = shovel
+
 
 
 if __name__ == "__main__":
