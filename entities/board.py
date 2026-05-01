@@ -68,6 +68,10 @@ class Board:
                 if self.grid[(q, r)] == 0:
                     self.grid[(q, r)] = kind
 
+    def set_grid(self, grid: dict[tuple[int, int], int]) -> None:
+        """Ecrase la grille (utilise pour le chargement d'une save)."""
+        self.grid = grid
+
     def _generate_grid(self) -> dict[tuple[int, int], int]:
         """Genere l'ensemble des cases du plateau en coordonnees axiales (q, r).
 
@@ -132,6 +136,11 @@ class BoardPile:
     def pop_top(self) -> bool:
         self.pile.pop(0)
         return True if len(self.pile) > 0 else False
+
+    def set_pile(self, pile: list) -> None:
+        """Remplace la pile complete de boards (utilise pour le chargement d'une save)."""
+        self.pile = pile
+        self.nb_boards = len(pile)
     
 
 if __name__ == "__main__":
