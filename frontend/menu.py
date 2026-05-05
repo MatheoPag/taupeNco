@@ -3,7 +3,6 @@ import tkinter as tk
 
 class Menu:
     def __init__(self):
-
         # Palette de couleur
         self.colors = {
             # Main
@@ -41,13 +40,6 @@ class Menu:
             'eliminated' : '#8C8C8C',
         }
 
-        # Création du dictionnaire pour la configuration du mode de jeu
-        self.game_config = {
-            'connexionmode' : None, # local OU multiplayer
-            'gamemode' : None, # classic OU custom
-            'nbplayer' :  1,#tk.IntVar(value=1), # 1, 2, 3 ou 4
-            'nbbot' : 1#tk.IntVar(value=0), # 0, 1, 2 ou 3
-        }
 
         # Création de la fenêtre
         self.root = tk.Tk()
@@ -56,6 +48,14 @@ class Menu:
         self.root.minsize(360, 480)
         self.root.maxsize(360, 480)
         self.root.config(bg = self.colors['background'])
+
+        # Création du dictionnaire pour la configuration du mode de jeu
+        self.game_config = {
+            'connexionmode' : None, # local OU multiplayer
+            'gamemode' : None, # classic OU custom
+            'nbplayer' : tk.IntVar(value=1), # 1, 2, 3 ou 4
+            'nbbot' : tk.IntVar(value=2), # 0, 1, 2 ou 3
+        }
 
         # Création des pages
         self._build_pages()
@@ -94,33 +94,30 @@ class Menu:
 
         label_player_title = tk.Label(frame_game_mode, text="Nombre de joueur : ", font=('', 16), bg=self.colors['background'])
         label_player_title.pack()
-        
+
         frame_button_player = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_player.pack(padx=20, pady=20)
 
-
-        btn1 = tk.Radiobutton(frame_button_player,text="j1", variable=self.game_config['nbplayer'], value = 1)
-        btn2 = tk.Radiobutton(frame_button_player,text="j2", variable=self.game_config['nbplayer'], value = 2)
-        btn3 = tk.Radiobutton(frame_button_player,text="j3", variable=self.game_config['nbplayer'], value = 3)
-        btn4 = tk.Radiobutton(frame_button_player,text="j4" , variable=self.game_config['nbplayer'], value = 4)
+        btn1 = tk.Radiobutton(frame_button_player,text="j1", variable=self.game_config['nbplayer'], value = 1,command=self.max_bot)
+        btn2 = tk.Radiobutton(frame_button_player,text="j2", variable=self.game_config['nbplayer'], value = 2,command=self.max_bot)
+        btn3 = tk.Radiobutton(frame_button_player,text="j3", variable=self.game_config['nbplayer'], value = 3,command=self.max_bot)
+        btn4 = tk.Radiobutton(frame_button_player,text="j4" , variable=self.game_config['nbplayer'], value = 4,command=self.max_bot)
         btn1.pack()
         btn2.pack()
         btn3.pack()
         btn4.pack()
-        
-        frame_button_bot = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_bot.pack(padx=20, pady=20)
 
-        bot1 = tk.Radiobutton(frame_button_bot,text="bot1", variable=self.game_config['nbbot'], value = 1)
-        bot2 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 2)
-        bot3 = tk.Radiobutton(frame_button_bot,text="3bot", variable=self.game_config['nbbot'], value = 3)
-        bot4 = tk.Radiobutton(frame_button_bot,text="4bot" , variable=self.game_config['nbbot'], value = 4)
+        frame_button_bot = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_bot.pack(padx=30, pady=30)
+
+        bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
+        bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
+        bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
+        bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 4,command=self.max_bot)
         bot1.pack()
         bot2.pack()
         bot3.pack()
         bot4.pack()
-
-
 
         label_gamemode_title = tk.Label(frame_game_mode, text="Mode de jeu : ", font=('', 16), bg=self.colors['background'])
         label_gamemode_title.pack()
@@ -142,14 +139,30 @@ class Menu:
 
         # Gestion de la superposition des couche
         frame_connexion_mode.tkraise()
-        
+
         button_local.config(command=frame_game_mode.tkraise)
         button_back1.config(command=frame_connexion_mode.tkraise)
+
+    # Évite des parties à plus de 4 'entités' (joueur ou bot)
+    def max_bot(self):
+        nb_players = self.game_config['nbplayer'].get()
+
+        max_bots = 5 - nb_players
+        nb_bots = self.game_config['nbbot'].get()
+
+        if nb_bots > max_bots :
+            self.game_config['nbbot'].set(max_bots)
+
+        if nb_players == 1 and self.game_config['nbbot'].get() == 1: # Un joueur seul, joue forcément avec un bot
+            self.game_config['nbbot'].set(2)
 
     # Affichage des pages
     def display(self):
         self.root.mainloop()
 
+
 if __name__ == "__main__":
     game = Menu()
     game.display()
+
+
