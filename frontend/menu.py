@@ -47,6 +47,8 @@ class Menu:
         self.root.geometry("360x480")
         self.root.minsize(360, 480)
         self.root.maxsize(360, 480)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
         self.root.config(bg = self.colors['background'])
 
         # Création du dictionnaire pour la configuration du mode de jeu
@@ -65,28 +67,40 @@ class Menu:
     def _build_pages(self):
 
         # FENÊTRE D'ACCUEIL
-        frame_connexion_mode = tk.Frame(self.root, width=352, height=472, bg=self.colors['layer0'])
+        frame_connexion_mode = tk.Frame(self.root, bg=self.colors['background'])
         frame_connexion_mode.grid(row=0, column=0, sticky='nsew')
+        frame_connexion_mode.grid_rowconfigure(0, weight=1)
+        frame_connexion_mode.grid_rowconfigure(1, weight=1)
+        frame_connexion_mode.grid_rowconfigure(2, weight=1)
+        frame_connexion_mode.grid_columnconfigure(0, weight=1)
 
         label_title = tk.Label(frame_connexion_mode, text="Taupes & compagnie", font=('', 24), bg=self.colors['background'])
-        label_title.pack()
+        label_title.grid(row=0, column=0, sticky='nsew')
 
-        label_welcome_title = tk.Label(frame_connexion_mode, text="Bienvenue !", font=('', 16), bg=self.colors['background'])
-        label_welcome_title.pack()
+        label_welcome_title = tk.Label(frame_connexion_mode, text="Choisissez un mode de connexion :", font=('', 16), bg=self.colors['background'])
+        label_welcome_title.grid(row=1, column=0, sticky='nsew')
 
-        frame_button_local = tk.Frame(frame_connexion_mode, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_local.pack(padx=20, pady=20)
-        button_local = tk.Button(frame_button_local, text="Local", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
-        button_local.pack()
+        frame_button_connexion = tk.Frame(frame_connexion_mode, bg=self.colors['background'])
+        frame_button_connexion.grid(row=2, column=0, sticky='nsew')
 
-        frame_button_online = tk.Frame(frame_connexion_mode, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_online.pack(padx=20, pady=20)
-        button_online = tk.Button(frame_button_online, text="Multijoueur en ligne", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
-        button_online.pack()
+        frame_button_local = tk.Frame(frame_button_connexion, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_local.pack(padx=20, pady=20, ipady=10, fill='x')
+        button_local = tk.Button(frame_button_local, text="Local", font=('', 16), bg=self.colors['grey'], bd=0, relief='flat')
+        button_local.pack(fill='both', expand=True)
+
+        frame_button_online = tk.Frame(frame_button_connexion, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_online.pack(padx=20, pady=20, ipady=10, fill='x')
+        button_online = tk.Button(frame_button_online, text="Multijoueur en ligne", font=('', 16), bg=self.colors['grey'], bd=0, relief='flat')
+        button_online.pack(fill='both', expand=True)
+
+        frame_button_quit = tk.Frame(frame_button_connexion, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_quit.pack(padx=20, pady=20, ipady=10, fill='x')
+        button_quit = tk.Button(frame_button_quit, text="Quitter le jeu", font=('', 16), bg=self.colors['red'], bd=0, relief='flat')
+        button_quit.pack(fill='both', expand=True)
 
 
         # FENÊTRE DU CHOIX DU MODE DE JEU
-        frame_game_mode = tk.Frame(self.root, width=352, height=472, bg=self.colors['layer1'])
+        frame_game_mode = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame_game_mode.grid(row=0, column=0, sticky='nsew')
 
         label_title = tk.Label(frame_game_mode, text="Mode local", font=('', 24), bg=self.colors['background'])
@@ -97,27 +111,31 @@ class Menu:
 
         frame_button_player = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_player.pack(padx=20, pady=20)
+        frame_button_player.grid_rowconfigure(0, weight=1)
+        frame_button_player.grid_columnconfigure(3, weight=1)
 
-        btn1 = tk.Radiobutton(frame_button_player,text="j1", variable=self.game_config['nbplayer'], value = 1,command=self.max_bot)
-        btn2 = tk.Radiobutton(frame_button_player,text="j2", variable=self.game_config['nbplayer'], value = 2,command=self.max_bot)
-        btn3 = tk.Radiobutton(frame_button_player,text="j3", variable=self.game_config['nbplayer'], value = 3,command=self.max_bot)
-        btn4 = tk.Radiobutton(frame_button_player,text="j4" , variable=self.game_config['nbplayer'], value = 4,command=self.max_bot)
-        btn1.pack()
-        btn2.pack()
-        btn3.pack()
-        btn4.pack()
+        button_player1 = tk.Radiobutton(frame_button_player,text="j1", variable=self.game_config['nbplayer'], value = 1,command=self.max_bot)
+        button_player2 = tk.Radiobutton(frame_button_player,text="j2", variable=self.game_config['nbplayer'], value = 2,command=self.max_bot)
+        button_player3 = tk.Radiobutton(frame_button_player,text="j3", variable=self.game_config['nbplayer'], value = 3,command=self.max_bot)
+        button_player4 = tk.Radiobutton(frame_button_player,text="j4" , variable=self.game_config['nbplayer'], value = 4,command=self.max_bot)
+        button_player1.grid(row=0, column=0)
+        button_player2.grid(row=0, column=1)
+        button_player3.grid(row=0, column=2)
+        button_player4.grid(row=0, column=3)
 
         frame_button_bot = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_bot.pack(padx=30, pady=30)
+        frame_button_bot.grid_rowconfigure(0, weight=1)
+        frame_button_bot.grid_columnconfigure(3, weight=1)
 
-        bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
-        bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
-        bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
-        bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 4,command=self.max_bot)
-        bot1.pack()
-        bot2.pack()
-        bot3.pack()
-        bot4.pack()
+        button_bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
+        button_bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
+        button_bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
+        button_bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 4,command=self.max_bot)
+        button_bot1.grid(row=0, column=0)
+        button_bot2.grid(row=0, column=1)
+        button_bot3.grid(row=0, column=2)
+        button_bot4.grid(row=0, column=3)
 
         label_gamemode_title = tk.Label(frame_game_mode, text="Mode de jeu : ", font=('', 16), bg=self.colors['background'])
         label_gamemode_title.pack()
@@ -137,10 +155,16 @@ class Menu:
         button_back1 = tk.Button(frame_button_back1, text="Retour", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
         button_back1.pack()
 
-        # Gestion de la superposition des couche
+        # GESTION DE LA SUPERPOSITION DES COUCHES
+
+            # Initialisation sur la page d'acceuil
         frame_connexion_mode.tkraise()
 
+            # Boutons de la page d'accueil
         button_local.config(command=frame_game_mode.tkraise)
+        button_quit.config(command=self.root.destroy)
+
+            # Boutons de la page configuration d'une partie
         button_back1.config(command=frame_connexion_mode.tkraise)
 
     # Évite des parties à plus de 4 'entités' (joueur ou bot)

@@ -88,8 +88,10 @@ class Menu:
 
         frame_button_local = tk.Frame(self.root, bg=self.colors['background'])
         frame_button_local.grid(row=2, column=0, sticky='nsew')
+        
         button_local = tk.Button(frame_button_local, text="Local", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
         button_local.pack()
+
         button_online = tk.Button(frame_button_local, text="Multijoueur en ligne", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
         button_online.pack()
 
