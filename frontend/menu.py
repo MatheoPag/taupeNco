@@ -59,7 +59,7 @@ class Menu:
             'nbplayer' : tk.IntVar(value=1), # 1, 2, 3 ou 4
             'nbbot' : tk.IntVar(value=2), # 0, 1, 2 ou 3
             'iphost' : None, # Adresse IP de l'host d'une partie
-            'iptarget' : tk.StringVar() # Adresse IP pour rejoidnre l'host
+            'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
 
         # Création des pages
@@ -103,16 +103,16 @@ class Menu:
 
 
         # FENÊTRE DU CHOIX DU MODE DE JEU
-        frame_game_mode = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
-        frame_game_mode.grid(row=0, column=0, sticky='nsew')
+        frame_local_mode = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
+        frame_local_mode.grid(row=0, column=0, sticky='nsew')
 
-        label_title = tk.Label(frame_game_mode, text="Mode local", font=('', 24), bg=self.colors['background'])
+        label_title = tk.Label(frame_local_mode, text="Mode local", font=('', 24), bg=self.colors['background'])
         label_title.pack()
 
-        label_player_title = tk.Label(frame_game_mode, text="Nombre de joueur : ", font=('', 16), bg=self.colors['background'])
+        label_player_title = tk.Label(frame_local_mode, text="Nombre de joueur : ", font=('', 16), bg=self.colors['background'])
         label_player_title.pack()
 
-        frame_button_player = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_player = tk.Frame(frame_local_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_player.pack(padx=20, pady=20)
         frame_button_player.grid_rowconfigure(0, weight=1)
         frame_button_player.grid_columnconfigure(3, weight=1)
@@ -126,34 +126,36 @@ class Menu:
         button_player3.grid(row=0, column=2)
         button_player4.grid(row=0, column=3)
 
-        frame_button_bot = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_bot = tk.Frame(frame_local_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_bot.pack(padx=30, pady=30)
         frame_button_bot.grid_rowconfigure(0, weight=1)
         frame_button_bot.grid_columnconfigure(3, weight=1)
 
-        button_bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
-        button_bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
-        button_bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
-        button_bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 4,command=self.max_bot)
+        button_bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 0,command=self.max_bot)
+        button_bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
+        button_bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
+        button_bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
         button_bot1.grid(row=0, column=0)
         button_bot2.grid(row=0, column=1)
         button_bot3.grid(row=0, column=2)
         button_bot4.grid(row=0, column=3)
 
-        label_gamemode_title = tk.Label(frame_game_mode, text="Mode de jeu : ", font=('', 16), bg=self.colors['background'])
+        label_gamemode_title = tk.Label(frame_local_mode, text="Mode de jeu : ", font=('', 16), bg=self.colors['background'])
         label_gamemode_title.pack()
 
-        frame_button_normal = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_normal.pack(padx=20, pady=20)
-        button_normal = tk.Button(frame_button_normal, text="Classique", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
-        button_normal.pack()
+        frame_button_classic = tk.Frame(frame_local_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_classic.pack(padx=20, pady=20)
+        button_classic = tk.Button(frame_button_classic, text="Classique", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat',
+                                command=self.create_local_classic)
+        button_classic.pack()
 
-        frame_button_custom = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_custom = tk.Frame(frame_local_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_custom.pack(padx=20, pady=20)
-        button_custom = tk.Button(frame_button_custom, text="Personnalisé", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
+        button_custom = tk.Button(frame_button_custom, text="Personnalisé", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat',
+                                command=self.create_local_custom)
         button_custom.pack()
 
-        frame_button_back1 = tk.Frame(frame_game_mode, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_back1 = tk.Frame(frame_local_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_back1.pack(padx=20, pady=20)
         button_back1 = tk.Button(frame_button_back1, text="Retour", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
         button_back1.pack()
@@ -177,7 +179,7 @@ class Menu:
         
         frame_button_join = tk.Frame(frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_join.grid(row=4, column=0, sticky='nsew')
-        button_join = tk.Button(frame_button_join, text="Rejoindre une partie", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat',command=self.join_game)
+        button_join = tk.Button(frame_button_join, text="Rejoindre une partie", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat',command=self.join_online_game)
         button_join.pack()
         
         frame_button_create = tk.Frame(frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2)
@@ -196,18 +198,33 @@ class Menu:
         frame_connexion_mode.tkraise()
 
             # Boutons de la page d'accueil
-        button_local.config(command=frame_game_mode.tkraise)
-        button_online.config(command=frame_multiplayer_mode.tkraise)
+        button_local.config(command=lambda : self.set_connexion_local(frame_local_mode))
+        button_online.config(command=lambda : self.set_connexion_multiplayer(frame_multiplayer_mode))
         button_quit.config(command=self.root.destroy)
         
             # Boutons de la page configuration d'une partie
-        button_back1.config(command=frame_connexion_mode.tkraise)
+        button_back1.config(command=lambda : self.set_connexion_local(frame_connexion_mode))
         
             # Boutons de la page multijoueur
-        button_back2.config(command=frame_connexion_mode.tkraise)
+        button_back2.config(command=lambda : self.set_connexion_local(frame_connexion_mode))
+
+    
+    # Ajuste la configuration de la partie en fonction du type de jeu 
+    def set_connexion_local(self, frame):
+        frame.tkraise()
+        self.game_config['connexionmode']='local'
+
+    def set_connexion_multiplayer(self, frame):
+        frame.tkraise()
+        self.game_config['connexionmode']='multiplayer'
+
+    def set_connexion_none(self, frame):
+        frame.tkraise()
+        self.game_config['connexionmode']='None'
 
 
-    # Évite des parties à plus de 4 'entités' (joueur ou bot)
+    # CONFIG LOCAL 
+        # Évite des parties à plus de 4 'entités' (joueur ou bot)
     def max_bot(self):
         nb_players = self.game_config['nbplayer'].get()
 
@@ -219,8 +236,34 @@ class Menu:
 
         if nb_players == 1 and self.game_config['nbbot'].get() == 1: # Un joueur seul, joue forcément avec un bot
             self.game_config['nbbot'].set(2)
+    
 
-    # Vérifie la conformité de l'adresse IP
+        # Renvoi la configuration de la partie (locale)
+    def create_local_classic(self):
+        self.game_config['gamemode'] = 'classic'
+        self.game_config['iphost'] = 'None'
+        self.game_config['iptarget'] = 'None'
+        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
+        self.game_config['nbbot'] = self.game_config['nbbot'].get()
+
+        print(self.game_config)
+        self.root.destroy()
+        return self.game_config
+
+    def create_local_custom(self):
+        self.game_config['gamemode'] = 'custom'
+        self.game_config['iphost'] = 'None'
+        self.game_config['iptarget'] = 'None'
+        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
+        self.game_config['nbbot'] = self.game_config['nbbot'].get()
+
+        print(self.game_config)
+        self.root.destroy()
+        return self.game_config
+
+
+    # CONFIG ONLINE
+        # Vérifie la conformité de l'adresse IP
     def check_ip(self, ip):
         parts = ip.split('.')
         
@@ -243,12 +286,14 @@ class Menu:
         return True
 
     
-    # Si l'adresser IP est valide, elle est stockée dans game_config
-    def join_game(self):
+        # Si l'adresser IP est valide, elle est stockée dans game_config
+    def join_online_game(self):
         ip = self.entry_ip.get()
 
         if self.check_ip(ip):
             self.game_config['iptarget'] = ip
+            self.root.destroy()
+            # return self.game_config # à ajouter lors du développement du mode en ligne
         else:
             messagebox.showwarning("Erreur", "L'adresse IP n'est pas conforme. Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)")
 
@@ -261,7 +306,3 @@ class Menu:
 if __name__ == "__main__":
     game = Menu()
     game.display()
-
-
-
-
