@@ -1,5 +1,6 @@
 # Librairie
 import tkinter as tk
+from tkinter import messagebox
 
 class Menu:
     def __init__(self):
@@ -171,11 +172,8 @@ class Menu:
         label_join = tk.Label(frame_multiplayer_mode, text="ID d'une partie (host) :", font=('', 16), bg=self.colors['background'])
         label_join.grid(row=1, column=0, sticky='nsew')
         
-        self.entry_ip = tk.Entry(frame_multiplayer_mode, font=('', 14),textvariable=self.game_config['iptarget'])
+        self.entry_ip = tk.Entry(frame_multiplayer_mode, font=('', 12),textvariable=self.game_config['iptarget'])
         self.entry_ip.grid(row=3, column=0, sticky='nsew') 
-        
-        self.label_ip_error = tk.Label(frame_multiplayer_mode,text="", font=('', 16), bg=self.colors['background'] )
-        self.label_ip_error.grid(row=2, column=0)
         
         frame_button_join = tk.Frame(frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2)
         frame_button_join.grid(row=4, column=0, sticky='nsew')
@@ -191,14 +189,9 @@ class Menu:
         frame_button_back2.grid(row=6, column=0, sticky='nsew')
         button_back2 = tk.Button(frame_button_back2, text="Retour", font=('', 16), bg=self.colors['layer0'], bd=0, relief='flat')
         button_back2.pack()
-        
-        
-        
-        
 
 
         # GESTION DE LA SUPERPOSITION DES COUCHES
-
             # Initialisation sur la page d'acceuil
         frame_connexion_mode.tkraise()
 
@@ -207,12 +200,12 @@ class Menu:
         button_online.config(command=frame_multiplayer_mode.tkraise)
         button_quit.config(command=self.root.destroy)
         
-
             # Boutons de la page configuration d'une partie
         button_back1.config(command=frame_connexion_mode.tkraise)
         
             # Boutons de la page multijoueur
         button_back2.config(command=frame_connexion_mode.tkraise)
+
 
     # Évite des parties à plus de 4 'entités' (joueur ou bot)
     def max_bot(self):
@@ -226,9 +219,9 @@ class Menu:
 
         if nb_players == 1 and self.game_config['nbbot'].get() == 1: # Un joueur seul, joue forcément avec un bot
             self.game_config['nbbot'].set(2)
-            
-            
-    def good_ip(self, ip):
+
+    # Vérifie la conformité de l'adresse IP
+    def check_ip(self, ip):
         parts = ip.split('.')
         
         if len(parts) != 4:
@@ -248,18 +241,17 @@ class Menu:
         if not (2 <= p3 <= 255): return False
         if not (2 <= p4 <= 254): return False
         return True
+
     
+    # Si l'adresser IP est valide, elle est stockée dans game_config
     def join_game(self):
         ip = self.entry_ip.get()
 
-        if self.good_ip(ip):
+        if self.check_ip(ip):
             self.game_config['iptarget'] = ip
-            self.label_ip_error.config(text="IP valide")
         else:
-            self.label_ip_error.config(text="Erreur")
+            messagebox.showwarning("Erreur", "L'adresse IP n'est pas conforme. Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)")
 
-        
-            
 
     # Affichage des pages
     def display(self):
