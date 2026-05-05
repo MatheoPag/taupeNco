@@ -57,6 +57,8 @@ class Menu:
             'gamemode' : None, # classic OU custom
             'nbplayer' : tk.IntVar(value=1), # 1, 2, 3 ou 4
             'nbbot' : tk.IntVar(value=2), # 0, 1, 2 ou 3
+            'iphost' : None, # Adresse IP de l'host d'une partie
+            'iptarget' : None # Adresse IP pour rejoidnre l'host
         }
 
         # Création des pages
