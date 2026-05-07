@@ -131,10 +131,10 @@ class Menu:
         frame_button_bot.grid_rowconfigure(0, weight=1)
         frame_button_bot.grid_columnconfigure(3, weight=1)
 
-        button_bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 0,command=self.max_bot)
-        button_bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
-        button_bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
-        button_bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
+        button_bot1 = tk.Radiobutton(frame_button_bot,text="sans bot", variable=self.game_config['nbbot'], value = 1,command=self.max_bot)
+        button_bot2 = tk.Radiobutton(frame_button_bot,text="1bot", variable=self.game_config['nbbot'], value = 2,command=self.max_bot)
+        button_bot3 = tk.Radiobutton(frame_button_bot,text="2bot", variable=self.game_config['nbbot'], value = 3,command=self.max_bot)
+        button_bot4 = tk.Radiobutton(frame_button_bot,text="3bot" , variable=self.game_config['nbbot'], value = 4,command=self.max_bot)
         button_bot1.grid(row=0, column=0)
         button_bot2.grid(row=0, column=1)
         button_bot3.grid(row=0, column=2)
@@ -244,11 +244,9 @@ class Menu:
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-        self.game_config['nbbot'] = self.game_config['nbbot'].get()
+        self.game_config['nbbot'] = self.game_config['nbbot'].get()-1
 
-        print(self.game_config)
         self.root.destroy()
-        return self.game_config
 
     def create_local_custom(self):
         self.game_config['gamemode'] = 'custom'
@@ -257,9 +255,7 @@ class Menu:
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.game_config['nbbot'] = self.game_config['nbbot'].get()
 
-        print(self.game_config)
         self.root.destroy()
-        return self.game_config
 
 
     # CONFIG ONLINE
@@ -278,11 +274,13 @@ class Menu:
         except:
             return False
 
+        if p1 == 1 and p2 == 1 and p3 == 1 and p4 == 1:
+            return False
         
-        if not (2 <= p1 <= 255): return False
-        if not (2 <= p2 <= 255): return False
-        if not (2 <= p3 <= 255): return False
-        if not (2 <= p4 <= 254): return False
+        if not (1 <= p1 <= 255): return False
+        if not (1 <= p2 <= 255): return False
+        if not (1 <= p3 <= 255): return False
+        if not (1 <= p4 <= 254): return False
         return True
 
     
@@ -302,7 +300,9 @@ class Menu:
     def display(self):
         self.root.mainloop()
 
+        return self.game_config
+
 
 if __name__ == "__main__":
-    game = Menu()
-    game.display()
+    menu = Menu()
+    menu.display()
