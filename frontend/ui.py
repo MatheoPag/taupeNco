@@ -74,11 +74,31 @@ class Interface:
         ''' CENTRE : Plateau de jeu '''
         frame_center = tk.Frame(frame_main, bg="#A7EEEB")
         frame_center.grid(row=0, column=1, sticky='nsew')
+        self.center(frame_center)
 
 
         ''' GAUCHE : Infos sur la partie en cours '''
         frame_right = tk.Frame(frame_main, bg="#A3C9E6")
         frame_right.grid(row=0, column=2, sticky='nsew')
+        
+        
+    def center(self, frame):
+        canvas = tk.Canvas(frame)
+        canvas.pack(fill='both', expand=True)
+        
+        def draw(event):
+
+            w = event.width 
+            h = event.height
+
+            cx = w // 2
+            cy = h//2 -70 #tri tri tu touche pas (pour bien le placer, grand chiffre= dessend petit chiffre= monte)
+            r = min(w, h) // 2.5 #NE PAS TOUCHER ( resize le rond )
+            canvas.create_oval(cx - r, cy - r,cx + r, cy + r)
+
+        canvas.bind('<Configure>', draw)
+
+
 
 
     # Affichage de l'interface du jeu
