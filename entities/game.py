@@ -1,6 +1,6 @@
-import player
-import board
-import golden_shovel
+from . import board
+from . import golden_shovel
+from . import player
 
 class Game: 
     def __init__(self, players: list[dict[str, str]], board_size: int) -> None:

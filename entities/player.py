@@ -1,5 +1,5 @@
-import pawn
-import disk
+from . import disk
+from . import pawn
 
 class Player:
     def __init__(self, id: int, name: str, color: str, nb_pawns: int) -> None:
