@@ -246,9 +246,7 @@ class Menu:
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.game_config['nbbot'] = self.game_config['nbbot'].get()-1
 
-        print(self.game_config)
         self.root.destroy()
-        return self.game_config
 
     def create_local_custom(self):
         self.game_config['gamemode'] = 'custom'
@@ -257,9 +255,7 @@ class Menu:
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.game_config['nbbot'] = self.game_config['nbbot'].get()
 
-        print(self.game_config)
         self.root.destroy()
-        return self.game_config
 
 
     # CONFIG ONLINE
@@ -303,6 +299,8 @@ class Menu:
     # Affichage des pages
     def display(self):
         self.root.mainloop()
+
+        return self.game_config
 
 
 if __name__ == "__main__":
