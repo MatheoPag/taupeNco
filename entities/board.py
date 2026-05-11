@@ -70,23 +70,48 @@ class Board:
                 grid[(q, r)] = 0
         return grid
 
+    def axial_to_2d(self, q: int, r: int) -> tuple[int, int]:
+        """Convertit une coordonnee axiale (q, r) en indices 2D (ligne, colonne).
+
+        Meme convention que la grille Tkinter :
+            ligne   = r + radius
+            colonne = 2 * q + r + 2 * radius
+        """
+        ligne = r + self.radius
+        colonne = 2 * q + r + 2 * self.radius
+        return ligne, colonne
+
+    def from_2d_to_axial(self, ligne: int, colonne: int) -> tuple[int, int]:
+        """Convertit des indices 2D (ligne, colonne) en coordonnees axiales (q, r).
+
+        Inverse de axial_to_2d : r = ligne - radius, q = (colonne - ligne - radius) / 2.
+        Leve ValueError si les entiers ne tombent pas juste ou si (q, r) est hors plateau.
+        """
+        n = self.radius
+        r = ligne - n
+        num = colonne - ligne - n
+        if num % 2 != 0:
+            raise ValueError(
+                f"Coordonnees 2D incoherentes pour la projection hex : (ligne={ligne}, colonne={colonne})"
+            )
+        q = num // 2
+        if (q, r) not in self.grid:
+            raise ValueError(
+                f"Coordonnees 2D hors hexagone : (ligne={ligne}, colonne={colonne}) -> (q={q}, r={r})"
+            )
+        return q, r
+
     def to_2d_grid(self) -> list[list]:
         """Projette la grille axiale (q, r) dans une liste 2D [ligne][colonne].
 
         Les cases hors hexagone valent None
         Les cases valides gardent leur valeur (0, 'X', 'S').
-        A utiliser pour dessiner la grille dans
-        tkinter.
-
-        Conversion axial -> 2D :
-            ligne   = r + radius
-            colonne = 2 * q + r + 2 * radius
+        A utiliser pour dessiner la grille dans tkinter.
         """
         total_cols = 2 * self.size - 1
         grid_2d = [[None] * total_cols for _ in range(self.size)]
         for (q, r), value in self.grid.items():
-            ligne = r + self.radius
-            colonne = 2 * q + r + 2 * self.radius
+            ligne, colonne = self.axial_to_2d(q, r)
             grid_2d[ligne][colonne] = value
         return grid_2d
 
@@ -109,7 +134,7 @@ class BoardPile:
         self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
             {
                 "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
-                      (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
+                    (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
                 "S": [],
             },
             {
@@ -152,3 +177,4 @@ class BoardPile:
 if __name__ == "__main__":
     board_pile = BoardPile([(1, "Surface"), (2, "Terre arable"), (3, "Sous-sol"), (4, "Roche mère")], 9)
     board_pile.get_top().print_grid()
+    print(board_pile.get_top().to_2d_grid())
