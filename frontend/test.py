@@ -192,6 +192,27 @@ class Interface:
                             r_node, size = 10,  self.colors['player4']
                             canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
 
+
+        def get_click_coordinate(event):
+            # Les coordonnées sont déjà relatives à canvas (la grille)
+            c = round((event.x - PAD) / STEP_X)
+            r = round((event.y - PAD) / STEP_Y)
+
+            # Vérification des bornes
+            if not (0 <= r < rows and 0 <= c < columns):
+                return None
+
+            # Vérification que la case existe dans grid_board
+            if grid_board[r][c] is None:
+                return None
+            
+            ''' DEBUG '''
+            print(f"Clic détecté → grille [{r}][{c}] = {grid_board[r][c]}, {grid_pawn[r][c]}") 
+
+            return (r, c, grid_pawn[r][c])
+
+        canvas.bind('<Button-1>', get_click_coordinate)
+
     # WIDGET PARTIE DROITE
     def right(self, frame, player):
         canvas_right = tk.Canvas(frame, highlightthickness=0,width=0,height=0)
@@ -227,17 +248,6 @@ class Interface:
 
             
         canvas_right.bind('<Configure>', draw_right)
-
-
-    # Récupère la coordonnée du widget parent
-    def get_click(self, event):
-        x = event.x
-        y = event.y
-
-        # debug
-        print(x)
-        print(y)
-
 
     # Affichage de l'interface du jeu
     def displayInterface(self):
