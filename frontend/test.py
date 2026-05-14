@@ -249,6 +249,7 @@ class Interface:
             
         canvas_right.bind('<Configure>', draw_right)
 
+
     # Affichage de l'interface du jeu
     def displayInterface(self):
         self.root.mainloop()
