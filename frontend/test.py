@@ -117,44 +117,80 @@ class Interface:
         canvas = tk.Canvas(canvas_circle, width=canvas_w, height=canvas_h, bg=self.colors['background'], highlightthickness=0)
         canvas.place(relx=0.5, rely=0.5, anchor='center')
 
-        # Grille de test : toutes les cases à "Case" (non None)
-        grid = [[None,   None,   None,   None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   None,   None,   None  ],  # r=0
-                [None,   None,   None,   "Case", None,   None, None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   None,   None  ],  # r=1
-                [None,   None,   "Case", None,   "Hole", None,   "Case", None,   "Special", None,   "Case", None,   "Case", None,   "Case", None,   None  ],  # r=2
-                [None,   "Case", None,   "Case", None,   "Case", None,   None, None,   "Case", None,   "Case", None,   "Case", None,   "Case", None  ],  # r=3
-                ["Special", None,   "Case", None,   "Case", None,   "Hole", None,   "Case", None, None, None,   "Special", None,   "Case", None,   "Case"],  # r=4
-                [None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None  ],  # r=5
-                [None,   None,   "Special", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   None  ],  # r=6
-                [None,   None,   None,   None, None,   "Case", None,   "Case", None,   "Hole", None,   "Case", None,   "Case", None,   None,   None  ],  # r=7
-                [None,   None,   None,   None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   "Case", None,   None,   None,   None  ],  # r=8
-            ]
+        # Grilles de test
+        grid_board = [
+            [None, None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None, None],
+            [None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None],
+            [None, None, "Case", None, "Hole", None, "Case", None, "Special", None, "Case", None, "Case", None, "Case", None, None],
+            [None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None],
+            ["Special", None, "Case", None, "Case", None, "Hole", None, "Case", None, "Case", None, "Special", None, "Case", None, "Case"],
+            [None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None],
+            [None, None, "Special", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None],
+            [None, None, None, "Case", None, "Case", None, "Case", None, "Hole", None, "Case", None, "Case", None, None, None],
+            [None, None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None, None],
+        ]
 
-        # 1ère couche : plateau (case, trous, cases spéciales)
+        grid_pawn = [
+            [None, None, None, None, "J1", None, "J2", None, "J3", None, "J4", None, None, None, None, None, None], 
+            [None, None, None, None, None, "J1", None, None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, "J1", None, None, None, "J1", None, None, None, None, None, None, None, None],  
+            [None, None, None, "J2", None, None, None, None, None, None, None, None, None, None, None, "J4", None],
+            ["J2", None, None, None, None, None, "J2", None, None, None, None, None, "J3", None, None, None, None], 
+            [None, None, None, "J3", None, None, None, None, None, None, None, None, None, None, None, None, None],
+            [None, None, "J4", None, None, None, None, None, None, None, None, None, None, None, None, None, None], 
+            [None, None, None, None, None, None, None, None, None, "J3", None, None, None, None, None, None, None],  
+            [None, None, None, None, None, None, "J4", None, None, None, None, None, None, None, None, None, None],
+        ]
+
+        ''' Logique des coordonnées à adapter en fonction du back-end. Import du fichier des positions des pions à prévoir. '''
+
+        # 1ère couche : plateau (cases existantes)
         for r in range(rows):
             for c in range(columns):
-                if grid[r][c] != None:
+                if grid_board[r][c] != None:
                     x = PAD + c * STEP_X
                     y = PAD + r * STEP_Y
 
-                    match grid[r][c]:
+                    match grid_board[r][c]:
                         case "Case":
                             r_node, size = 5,  self.colors['layer0']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
+                    
+        # 2ème couche : plateau (trous, cases spéciales)
+        for r in range(rows):
+            for c in range(columns):
+                if grid_board[r][c] != None:
+                    x = PAD + c * STEP_X
+                    y = PAD + r * STEP_Y
+
+                    match grid_board[r][c]:
                         case "Hole":
                             r_node, size = 20, self.colors['layer1']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
                         case "Special":
                             r_node, size = 13,  self.colors['layer0']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
+
+        # 3ème couche : joueurs (pions)
+        for r in range(rows):
+            for c in range(columns):
+                if grid_pawn[r][c] != None:
+                    x = PAD + c * STEP_X
+                    y = PAD + r * STEP_Y
+
+                    match grid_pawn[r][c]:
                         case "J1":
                             r_node, size = 10,  self.colors['player1']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
                         case "J2":
                             r_node, size = 10,  self.colors['player2']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
                         case "J3":
                             r_node, size = 10,  self.colors['player3']
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
                         case "J4":
                             r_node, size = 10,  self.colors['player4']
-                        case _:
-                            r_node, size = 5,  self.colors['border']
-
-                    canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
+                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
 
     # WIDGET PARTIE DROITE
     def right(self, frame, player):
