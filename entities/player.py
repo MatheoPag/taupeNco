@@ -6,8 +6,10 @@ class Player:
         self.id = id
         self.name = name
         self.color = color
+        self.last_pawn_moved = -1
         self.pawns = [pawn.Pawn(i, color) for i in range(1, nb_pawns + 1)]
         self.disks = disk.Disks(color)
+
 
     def set_pawns(self, pawns: list) -> None:
         """Remplace la liste des pions (utilise pour le chargement d'une save)."""

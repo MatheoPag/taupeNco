@@ -4,6 +4,9 @@ import tkinter as tk
 class Interface:
     def __init__(self, game):
         # Palette de couleur
+        self.game = game
+        self._board_canvas = None
+
         self.colors = {
             # Main
             'background' : '#D1D1D1',
@@ -51,177 +54,173 @@ class Interface:
         self.root.config(bg = self.colors['background'])
 
         # Création des widgets
-        self._build_widgets(game)
+        self._build_widgets()
 
 
     # Construction des widgets
-    def _build_widgets(self, game):
+    def _build_widgets(self):
 
         # FOND DE L'INTERFACE
-        frame_main = tk.Frame(self.root, bg=self.colors['background'])
-        frame_main.grid(row=0, column=0, sticky='nsew')
-        frame_main.grid_rowconfigure(0, weight=1)
-        frame_main.grid_columnconfigure(0, weight=1)
-        frame_main.grid_columnconfigure(1, weight=2)
-        frame_main.grid_columnconfigure(2, weight=1)
+        self.frame_main = tk.Frame(self.root, bg=self.colors['background'])
+        self.frame_main.grid(row=0, column=0, sticky='nsew')
+        self.frame_main.grid_rowconfigure(0, weight=1)
+        self.frame_main.grid_columnconfigure(0, weight=1)
+        self.frame_main.grid_columnconfigure(1, weight=2)
+        self.frame_main.grid_columnconfigure(2, weight=1)
 
 
         ''' GAUCHE : Infos sur le statut des joueurs '''
-        frame_left = tk.Frame(frame_main, bg="#A3E6AE")
-        frame_left.grid(row=0, column=0, sticky='nsew')
+        self.frame_left = tk.Frame(self.frame_main, bg="#A3E6AE")
+        self.frame_left.grid(row=0, column=0, sticky='nsew')
 
 
         ''' CENTRE : Plateau de jeu '''
-        frame_center = tk.Frame(frame_main, bg="#A7EEEB")
-        frame_center.grid(row=0, column=1, sticky='nsew')
-        self.center(frame_center, game.players, game.boards.get_top().to_2d_grid())
-
+        self.frame_center = tk.Frame(self.frame_main, bg="#A7EEEB")
+        self.frame_center.grid(row=0, column=1, sticky='nsew')
 
         ''' DROITE : Infos sur la partie en cours '''
-        frame_right = tk.Frame(frame_main, bg="#A3C9E6")
-        frame_right.grid(row=0, column=2, sticky='nsew')
+        self.frame_right = tk.Frame(self.frame_main, bg="#A3C9E6")
+        self.frame_right.grid(row=0, column=2, sticky='nsew')
         
+        self.update_ui()
         
+    def update_ui(self):
+        self.center()
+        self.right()
 
-        player = (2, [["Jeton 1", True], ["Jeton 2", False], ["Jeton 3", True],
-                            ["Jeton 4", False], ["Jeton 5", True], ["Jeton 6", False]])
-        self.right(frame_right, player)
-        
-    # WIDGET PARTIE CENTRE
-    def center(self, frame, players, grid):
-        print(players)
-        print(grid)
-        canvas_circle = tk.Canvas(frame, bg=self.colors['background'], highlightthickness=0)
+    def _redraw_center_pawns(self):
+        if self._board_canvas is None:
+            return
+        self._board_canvas.delete('pawns')
+        pad = self._center_pad
+        STEP_X = self._center_STEP_X
+        STEP_Y = self._center_STEP_Y
+        for player in self.game.players:
+            for pawn in player.pawns:
+                if pawn.position is None:
+                    continue
+                x = pad + pawn.position[1] * STEP_X
+                y = pad + pawn.position[0] * STEP_Y
+                r_node = 10
+                fill = self.colors[player.name.lower().replace(" ", "")]
+                self._board_canvas.create_oval(
+                    x - r_node, y - r_node, x + r_node, y + r_node,
+                    fill=fill, outline='', tags='pawns',
+                )
+
+    def _setup_center_board(self):
+        canvas_circle = tk.Canvas(self.frame_center, bg=self.colors['background'], highlightthickness=0)
+        self._canvas_circle = canvas_circle
         canvas_circle.pack(fill='both', expand=True)
-        
+
         def draw(event):
-            canvas_circle.delete('all')
-            w = event.width 
+            self._canvas_circle.delete('all')
+            w = event.width
             h = event.height
 
             cx = w // 2 # NE PAS TOUCHER
             cy = h // 2 - 70 # NE PAS TOUCHER
             r = min(w, h) // 2.5  # NE PAS TOUCHER
-            canvas_circle.create_oval(cx - r, cy - r, cx + r, cy + r, outline=self.colors['border'], width=1)
+            self._canvas_circle.create_oval(cx - r, cy - r, cx + r, cy + r, outline=self.colors['border'], width=1)
 
         canvas_circle.bind('<Configure>', draw)
 
-        rows = 9
-        columns = 17
-
+        self._center_rows = 9
+        self._center_columns = 17
         STEP_X = 50
         STEP_Y = 50
+        self._center_STEP_X = STEP_X
+        self._center_STEP_Y = STEP_Y
+        self._center_pad = 40
+        rows, columns = self._center_rows, self._center_columns
+        pad = self._center_pad
 
-        PAD = 40
-        canvas_w = (columns - 1) * STEP_X + 2 * PAD
-        canvas_h = (rows - 1) * STEP_Y + 2 * PAD
+        canvas_w = (columns - 1) * STEP_X + 2 * pad
+        canvas_h = (rows - 1) * STEP_Y + 2 * pad
 
-        canvas = tk.Canvas(canvas_circle, width=canvas_w, height=canvas_h, bg=self.colors['background'], highlightthickness=0)
-        canvas.place(relx=0.5, rely=0.5, anchor='center')
+        self._board_canvas = tk.Canvas(
+            canvas_circle, width=canvas_w, height=canvas_h,
+            bg=self.colors['background'], highlightthickness=0,
+        )
+        self._board_canvas.place(relx=0.5, rely=0.5, anchor='center')
 
-        # Grilles de test
-        grid_board = [
-            [None, None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None, None],
-            [None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None],
-            [None, None, "Case", None, "Hole", None, "Case", None, "Special", None, "Case", None, "Case", None, "Case", None, None],
-            [None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None],
-            ["Special", None, "Case", None, "Case", None, "Hole", None, "Case", None, "Case", None, "Special", None, "Case", None, "Case"],
-            [None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None],
-            [None, None, "Special", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None],
-            [None, None, None, "Case", None, "Case", None, "Case", None, "Hole", None, "Case", None, "Case", None, None, None],
-            [None, None, None, None, "Case", None, "Case", None, "Case", None, "Case", None, "Case", None, None, None, None],
-        ]
-
-        grid_pawn = [
-            [None, None, None, None, "J1", None, "J2", None, "J3", None, "J4", None, None, None, None, None, None], 
-            [None, None, None, None, None, "J1", None, None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, "J1", None, None, None, "J1", None, None, None, None, None, None, None, None],  
-            [None, None, None, "J2", None, None, None, None, None, None, None, None, None, None, None, "J4", None],
-            ["J2", None, None, None, None, None, "J2", None, None, None, None, None, "J3", None, None, None, None], 
-            [None, None, None, "J3", None, None, None, None, None, None, None, None, None, None, None, None, None],
-            [None, None, "J4", None, None, None, None, None, None, None, None, None, None, None, None, None, None], 
-            [None, None, None, None, None, None, None, None, None, "J3", None, None, None, None, None, None, None],  
-            [None, None, None, None, None, None, "J4", None, None, None, None, None, None, None, None, None, None],
-        ]
-
-        ''' Logique des coordonnées à adapter en fonction du back-end. Import du fichier des positions des pions à prévoir. '''
+        grid = self.game.boards.get_top().to_2d_grid()
 
         # 1ère couche : plateau (cases existantes)
         for r in range(rows):
             for c in range(columns):
-                if grid_board[r][c] != None:
-                    x = PAD + c * STEP_X
-                    y = PAD + r * STEP_Y
+                if grid[r][c] is not None:
+                    x = pad + c * STEP_X
+                    y = pad + r * STEP_Y
 
-                    match grid_board[r][c]:
-                        case "Case":
-                            r_node, size = 5,  self.colors['layer0']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-                    
+                    match grid[r][c]:
+                        case 0:
+                            r_node, size = 5, self.colors['layer0']
+                            self._board_canvas.create_oval(
+                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                            )
         # 2ème couche : plateau (trous, cases spéciales)
         for r in range(rows):
             for c in range(columns):
-                if grid_board[r][c] != None:
-                    x = PAD + c * STEP_X
-                    y = PAD + r * STEP_Y
+                if grid[r][c] is not None:
+                    x = pad + c * STEP_X
+                    y = pad + r * STEP_Y
 
-                    match grid_board[r][c]:
-                        case "Hole":
+                    match grid[r][c]:
+                        case "X":
                             r_node, size = 20, self.colors['layer1']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-                        case "Special":
-                            r_node, size = 13,  self.colors['layer0']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-
-        # 3ème couche : joueurs (pions)
-        for r in range(rows):
-            for c in range(columns):
-                if grid_pawn[r][c] != None:
-                    x = PAD + c * STEP_X
-                    y = PAD + r * STEP_Y
-
-                    match grid_pawn[r][c]:
-                        case "J1":
-                            r_node, size = 10,  self.colors['player1']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-                        case "J2":
-                            r_node, size = 10,  self.colors['player2']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-                        case "J3":
-                            r_node, size = 10,  self.colors['player3']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-                        case "J4":
-                            r_node, size = 10,  self.colors['player4']
-                            canvas.create_oval(x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='')
-
+                            self._board_canvas.create_oval(
+                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                            )
+                        case "S":
+                            r_node, size = 13, self.colors['layer0']
+                            self._board_canvas.create_oval(
+                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                            )
 
         def get_click_coordinate(event):
             # Les coordonnées sont déjà relatives à canvas (la grille)
-            c = round((event.x - PAD) / STEP_X)
-            r = round((event.y - PAD) / STEP_Y)
+            grid_live = self.game.boards.get_top().to_2d_grid()
+            c = round((event.x - pad) / STEP_X)
+            r = round((event.y - pad) / STEP_Y)
 
-            # Vérification des bornes
             if not (0 <= r < rows and 0 <= c < columns):
                 return None
 
-            # Vérification que la case existe dans grid_board
-            if grid_board[r][c] is None:
+            if grid_live[r][c] is None:
                 return None
-            
-            ''' DEBUG '''
-            print(f"Clic détecté → grille [{r}][{c}] = {grid_board[r][c]}, {grid_pawn[r][c]}") 
 
-            return (r, c, grid_pawn[r][c])
+            return (r, c, grid_live[r][c])
 
-        canvas.bind('<Button-1>', get_click_coordinate)
+        def gerer_clic(event):
+            coords = get_click_coordinate(event)
+            if coords is None:
+                return
+            row, col, _ = coords
+
+            if self.game.phase == "placement":
+                self.game.try_place_current_pawn(row, col)
+            self.update_ui()
+
+        self._board_canvas.bind('<Button-1>', gerer_clic)
+
+    # WIDGET PARTIE CENTRE
+    def center(self):
+        if self._board_canvas is None:
+            self._setup_center_board()
+        self._redraw_center_pawns()
 
     # WIDGET PARTIE DROITE
-    def right(self, frame, player):
-        canvas_right = tk.Canvas(frame, highlightthickness=0,width=0,height=0)
-        canvas_right.pack(fill='both', expand=True)
+    def right(self):
+        for w in self.frame_right.winfo_children():
+            w.destroy()
 
-        name, disks = player
-        label_round = tk.Label(frame, text=f"Au joueur {name}", bg=self.colors['white'], fg=self.colors['black'],anchor = "n" )
+        canvas_right = tk.Canvas(self.frame_right, highlightthickness=0,width=0,height=0)
+        canvas_right.pack(fill='both', expand=True)
+        player = self.game.players[self.game.current_player]
+
+        name, disks = player.name, player.disks.get_disks()
+        label_round = tk.Label(self.frame_right, text=f"Au tour de {name}", bg=self.colors['white'], fg=self.colors['black'],anchor = "n" )
 
         def draw_right(event):
             
@@ -241,11 +240,17 @@ class Interface:
             
             
             cx = w // 2 # NE PAS TOUCHER
-            cy = h // 2 - 70 # NE PAS TOUCHER
+            cy = h // 2 + 10 # NE PAS TOUCHER (mat : je me suis permis de toucher)
             r = min(w, h) // 20  # NE PAS TOUCHER
-            
-            
-            canvas_pions = tk.Canvas(canvas_right, highlightthickness=0, bg=self.colors['white'])
+
+            canvas_pions = tk.Canvas(
+                canvas_right,
+                highlightthickness=3,
+                highlightbackground=self.colors['border'],
+                highlightcolor=self.colors['border'],
+                bg=self.colors['white'],
+            )
+
             canvas_right.create_window(cx, cy, window=canvas_pions, width=size * 0.7, height=size * 0.3)
 
             

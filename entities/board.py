@@ -1,7 +1,7 @@
 import copy
 
 class Board:
-    def __init__(self, size: int, color, markers: dict[str, list[tuple[int, int]]]) -> None:
+    def __init__(self, size: int, color, markers: dict[str, list[tuple[int, int]]], orientation: int) -> None:
         if size % 2 == 0:
             raise ValueError("La taille doit etre impaire")
         if size <= 0:
@@ -14,6 +14,9 @@ class Board:
         self.center = (0, 0)
         self.markers = markers
         self._apply_markers()
+        
+        for i in range(orientation):
+            self.rotate_60()
 
     def _rotate_axial_60(self, q: int, r: int) -> tuple[int, int]:
         """Rotation de +60 deg en plan hexagonal.
@@ -130,7 +133,7 @@ class Board:
             print()
 
 class BoardPile:
-    def __init__(self, colors:list[tuple[int, str]], size: int) -> None:
+    def __init__(self, colors:list[tuple[int, str]], size: int, board_orientation: list[int]) -> None:
         self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
             {
                 "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
@@ -152,10 +155,10 @@ class BoardPile:
         ]
 
         self.pile = []
-        for color in colors:
+        for i, color in enumerate(colors):
             layer_id = color[0]
             layer_markers = copy.deepcopy(self._markers_by_layer[layer_id])
-            self.pile.append(Board(size, color, markers=layer_markers))
+            self.pile.append(Board(size, color, markers=layer_markers, orientation=board_orientation[i]))
         self.nb_boards = len(colors)
     
     def get_top(self) -> Board:

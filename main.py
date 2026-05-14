@@ -6,6 +6,6 @@ from frontend import ui
 if __name__ == "__main__":
     game_menu = menu.Menu()
     game_config = game_menu.display()
-    game = game.Game(game_config["nbplayer"], game_config["nbbot"])
-    for ligne in game.boards.get_top().to_2d_grid():
-        print(len(ligne))
+    game = game.Game(game_config["nbplayer"], game_config["nbbot"], [0, 0, 0, 0])
+    game_ui = ui.Interface(game)
+    game_ui.displayInterface()
