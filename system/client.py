@@ -5,8 +5,14 @@ import argparse
 
 class GameClient:
     def __init__(self, host, port=5555):
+        print(f"Connexion au serveur {host}:{port}...")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((host, port))
+        try:
+            self.sock.connect((host, port))
+        except OSError as err:
+            print(f"Échec de la connexion : {err}")
+            raise
+        print("Connexion réussie")
 
     def send_action(self, action: dict):
         self.sock.sendall((json.dumps(action) + "\n").encode('utf-8'))

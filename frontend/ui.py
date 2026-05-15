@@ -2,10 +2,18 @@
 import tkinter as tk
 
 class Interface:
-    def __init__(self, game):
+    def __init__(self, game, network=None, role="local", local_player_id=0):
         # Palette de couleur
         self.game = game
         self._board_canvas = None
+
+        # Mode de connexion : "local", "host" ou "client"
+        # - local  : on applique tout directement (comportement d'origine)
+        # - host   : on applique en local ET on diffuse l'action aux clients
+        # - client : on envoie l'action au serveur, l'action reviendra par le reseau
+        self.role = role
+        self.network = network  # GameServer (host), GameClient (client), ou None (local)
+        self.local_player_id = local_player_id
 
         self.colors = {
             # Main
@@ -198,8 +206,40 @@ class Interface:
                 return
             row, col, _ = coords
 
+            # MULTIJOUEUR
+            if self.role != "local":
+                # on n'agit que si c'est notre tour
+                if self.game.current_player != self.local_player_id:
+                    return
+                # CLIENT : on envoie au serveur, on n'applique pas tout de suite.
+                #          L'action reviendra via le broadcast et sera appliquee
+                #          par on_network_message().
+                if self.role == "client":
+                    if self.game.phase == "placement":
+                        self.network.send_action({"type": "place_pawn", "row": row, "col": col})
+                    elif self.game.phase == "mouvement":
+                        self.network.send_action({"type": "next_player"})
+                    return
+
+            # LOCAL ou HOST : on applique directement (logique d'origine)
+            print(f"Phase : {self.game.phase}")
+            action = None
             if self.game.phase == "placement":
                 self.game.try_place_current_pawn(row, col)
+                action = {"type": "place_pawn", "row": row, "col": col}
+            elif self.game.phase == "mouvement":
+                print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
+                print("choix du pion")
+                print(f"deplace un pion de la taille indiquée par le disque")
+                old_player = self.game.players[self.game.current_player].name
+                self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+                print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
+                action = {"type": "next_player"}
+
+            # HOST : on previent les clients de ce qu'on vient de jouer
+            if self.role == "host" and action is not None:
+                self.network.send_data(action)
+
             self.update_ui()
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
@@ -255,6 +295,20 @@ class Interface:
 
             
         canvas_right.bind('<Configure>', draw_right)
+
+
+    # RESEAU : appele depuis un thread d'ecoute, on bascule sur le thread Tkinter
+    def on_network_message(self, msg):
+        self.root.after(0, lambda: self._apply_remote(msg))
+
+    # Applique une action venant du reseau (host : action d'un client, client : action broadcastee)
+    def _apply_remote(self, msg):
+        action_type = msg.get("type")
+        if action_type == "place_pawn":
+            self.game.try_place_current_pawn(msg["row"], msg["col"])
+        elif action_type == "next_player":
+            self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+        self.update_ui()
 
 
     # Affichage de l'interface du jeu
