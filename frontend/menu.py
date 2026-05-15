@@ -279,7 +279,7 @@ class Menu:
     # CONFIG MULTIJOUEUR (hôte)
     def _finalize_multiplayer_host(self, gamemode, nbbot):
         self.game_config['gamemode'] = gamemode
-        self.game_config['iphost'] = get_local_ip()
+        self.game_config['iphost'] = "0.0.0.0"
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.game_config['nbbot'] = nbbot
@@ -312,8 +312,8 @@ class Menu:
             return False
         
         if not (1 <= p1 <= 255): return False
-        if not (1 <= p2 <= 255): return False
-        if not (1 <= p3 <= 255): return False
+        if not (0 <= p2 <= 255): return False
+        if not (0 <= p3 <= 255): return False
         if not (1 <= p4 <= 254): return False
         return True
 

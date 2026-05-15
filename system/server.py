@@ -9,8 +9,10 @@ class GameServer:
         self.server.bind((host, port))
         self.server.listen(max_player)
         self.max_player = max_player
-        self.clients = []      
-        self.game_state = None 
+        # L'hôte joue en local : on attend les autres joueurs via le réseau
+        self.required_clients = max(0, max_player - 1)
+        self.clients = []
+        self.game_state = None
         self._running = False
         self._next_player_id = 0
 
@@ -69,8 +71,11 @@ class GameServer:
             pass
 
     def start(self):
+        """Accepte les clients jusqu'au nombre requis, puis retourne pour lancer la partie."""
         self._running = True
-        while self._running:
+        print("En attente de joueur...")
+
+        while len(self.clients) < self.required_clients:
             conn, addr = self.server.accept()
             self.clients.append(conn)
 
@@ -82,6 +87,16 @@ class GameServer:
                 args=(conn, player_id),
                 daemon=True,
             ).start()
+
+            print(
+                f"Joueur connecté ({len(self.clients)}/{self.required_clients}) "
+                f": {addr[0]}:{addr[1]}"
+            )
+            if len(self.clients) < self.required_clients:
+                print("En attente de joueur...")
+
+        print(f"Lobby complet ({self.max_player} joueur(s)). Démarrage de la partie...")
+        self._running = False
 
     def stop(self):
         self._running = False
