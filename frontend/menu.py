@@ -279,7 +279,7 @@ class Menu:
     # CONFIG MULTIJOUEUR (hôte)
     def _finalize_multiplayer_host(self, gamemode, nbbot):
         self.game_config['gamemode'] = gamemode
-        self.game_config['iphost'] = "0.0.0.0"
+        self.game_config['iphost'] = get_local_ip()
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.game_config['nbbot'] = nbbot

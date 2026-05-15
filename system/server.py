@@ -9,12 +9,14 @@ class GameServer:
         self.server.bind((host, port))
         self.server.listen(max_player)
         self.max_player = max_player
-        # L'hôte joue en local : on attend les autres joueurs via le réseau
+        # L'hote joue en local : on attend les autres joueurs via le reseau
         self.required_clients = max(0, max_player - 1)
         self.clients = []
-        self.game_state = None
         self._running = False
-        self._next_player_id = 0
+        # 0 est reserve a l'hote, les clients reseau commencent a 1
+        self._next_player_id = 1
+        # Callback appele quand un client envoie une action (fournie par main.py)
+        self.on_action_received = None
 
     def send_data(self, message: dict):
         data = (json.dumps(message) + "\n").encode('utf-8')
@@ -53,11 +55,12 @@ class GameServer:
                     except json.JSONDecodeError:
                         continue
 
-                    # broadcast any received action to all clients
-                    self.send_data(action)
+                    # Notifier l'hote pour qu'il applique l'action sur sa Game
+                    if self.on_action_received is not None:
+                        self.on_action_received(action)
 
-                    if self.game_state is not None:
-                        self.send_data(self.game_state.to_dict())
+                    # Relayer l'action a tous les clients (y compris l'emetteur)
+                    self.send_data(action)
             except Exception:
                 break
 
@@ -82,6 +85,14 @@ class GameServer:
             player_id = self._next_player_id
             self._next_player_id += 1
 
+            # Communique son ID au client qui vient de se connecter
+            try:
+                conn.sendall(
+                    (json.dumps({"type": "assign_id", "player_id": player_id}) + "\n").encode("utf-8")
+                )
+            except OSError:
+                pass
+
             threading.Thread(
                 target=self.handle_client,
                 args=(conn, player_id),
@@ -90,7 +101,7 @@ class GameServer:
 
             print(
                 f"Joueur connecté ({len(self.clients)}/{self.required_clients}) "
-                f": {addr[0]}:{addr[1]}"
+                f": {addr[0]}:{addr[1]} -> ID {player_id}"
             )
             if len(self.clients) < self.required_clients:
                 print("En attente de joueur...")
