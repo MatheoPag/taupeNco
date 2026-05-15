@@ -90,6 +90,14 @@ class GameServer:
         except OSError:
             pass
 
+def get_local_ip():
+    """Retourne l'adresse IPv4 locale utilisée pour le réseau"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
+    except OSError:
+        return None
 
 if __name__ == "__main__":
     GameServer().start()

@@ -4,6 +4,9 @@ from . import board
 from . import golden_shovel
 from . import player
 import random
+
+# 192.168.1.76
+
 class Game: 
     def __init__(self, nb_players: int, nb_bots: int, board_orientation: list[int]) -> None:
         self.board_size = 9
