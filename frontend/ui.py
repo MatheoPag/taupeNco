@@ -197,9 +197,16 @@ class Interface:
             if coords is None:
                 return
             row, col, _ = coords
-
+            print(f"Phase : {self.game.phase}")
             if self.game.phase == "placement":
                 self.game.try_place_current_pawn(row, col)
+            if self.game.phase == "mouvement":
+                print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
+                print("choix du pion")
+                print(f"deplace un pion de la taille indiquée par le disque")
+                old_player = self.game.players[self.game.current_player].name
+                self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+                print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
             self.update_ui()
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
