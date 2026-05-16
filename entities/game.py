@@ -3,7 +3,6 @@ from typing import Literal
 from . import board
 from . import golden_shovel
 from . import player
-import random
 
 # 192.168.1.76
 
@@ -98,7 +97,7 @@ class Game:
             self.phase = "mouvement"
         return True
 
-    def try_choose_disk(self) -> bool:
+    def try_choose_disk(self, disk_selected: int) -> bool:
         """Phase mouvement : choix du disque."""
         if self.phase != "mouvement":
             return False
@@ -106,18 +105,8 @@ class Game:
             self.sub_phase = "choix_disque"
         if self.sub_phase == "choix_disque":
             print("choix du disque")
-            # temporairement, on fait un random dans la liste des disques parmis ceux qui ne sont pas deja selectionnés
-            disks = self.players[self.current_player].disks.get_disks()
-            # Création d'un dictionnaire des disques non sélectionnés, avec leur indice comme clé
-            available_disks = {idx: disk for idx, disk in enumerate(disks) if disk[1] == False}
-            if available_disks:
-                selected_idx = random.choice(list(available_disks.keys()))
-                self.players[self.current_player].disk_selected = selected_idx
-            else:
-                self.players[self.current_player].disk_selected = None
-                print("aucun disque disponible")
-                return False
-            disk = self.players[self.current_player].disks.get_disks()[self.players[self.current_player].disk_selected]
+            self.players[self.current_player].disk_selected = disk_selected
+            disk = self.players[self.current_player].disks.get_disks()[disk_selected]
             disk[1] = True
             print(f"disque selectionné : {disk}")
             self.sub_phase = "choix_pion"
@@ -152,7 +141,7 @@ class Game:
 
         return False
 
-    def try_move_chosen_pawn_to(self, pawn_index: int, row: int, col: int) -> bool:
+    def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
         """Phase mouvement : déplace le pion désigné du joueur courant (passage de tour à ajouter plus tard)."""
         if self.phase != "mouvement":
             return False
@@ -161,17 +150,49 @@ class Game:
             return False
         if self.sub_phase == "deplacement":
             print("deplacement")
-            self.sub_phase = "choix_disque"
-            self.current_player = (self.current_player + 1) % len(self.players)
-            return True
-        
-        cur = self.players[self.current_player]
-        if not (0 <= pawn_index < len(cur.pawns)):
-            return False
-        # verifie si le deplacement a un nombre de pas egal a la valeur du disque selectionné. 
-        # Deplacement permis uniquement en ligne droite, c'est a dire en diagonal ou en ligne droite mais pas de changement de direction.
-        disk = self.players[self.current_player].disks.get_disks()[self.players[self.current_player].disk_selected]
-        return self.try_move_pawn_to_cell(cur.pawns[pawn_index], row, col, "mouvement")
+            cur = self.players[self.current_player]
+           
+            if cur.pawn_selected is None or not (0 <= cur.pawn_selected < len(cur.pawns)):
+                print("le pion selectionné n'est pas valide")
+                return False
+            pawn = cur.pawns[cur.pawn_selected]
+            if pawn.position is None:
+                print("le pion n'est pas sur le plateau")
+                return False
+            
+            if cur.disk_selected is None:
+                print("le disque selectionné n'est pas valide")
+                return False
+            required_moves = cur.disks.get_disks()[cur.disk_selected][0]
+            
+            board = self.boards.get_top()
+            try :
+                q1, r1 = board.from_2d_to_axial(pawn.position[0], pawn.position[1])
+                q2, r2 = board.from_2d_to_axial(row, col)
+            except ValueError:
+                print("le deplacement n'est pas valide car les coordonnées sont hors du plateau")
+                return False
+            if not board.is_straight_line(q1, r1, q2, r2):
+                print("le deplacement n'est pas en ligne droite car les coordonnées ne sont pas en ligne droite")
+                return False
+            if required_moves != board.hex_distance(q1, r1, q2, r2):
+                print("le deplacement n'est pas valide car le nombre de pas est incorrect")
+                return False
+            for pq, pr in board.line_path(q1, r1, q2, r2):
+                pl, pc = board.axial_to_2d(pq, pr)
+                if self.cell_occupied_by_pawn(pl, pc):
+                    return False
+            if self.try_move_pawn_to_cell(pawn, row, col, "mouvement"):
+                self.sub_phase = "choix_disque"
+                # Regle : atterrir sur une case speciale ("S") fait rejouer le joueur courant.
+                if board.grid.get((q2, r2)) == "S":
+                    print(f"Case speciale : {cur.name} rejoue.")
+                else:
+                    self.current_player = (self.current_player + 1) % len(self.players)
+                return True
+            else:
+                print("le deplacement n'est pas valide car la case est occupée par un autre pion")
+        return False
 
 if __name__ == "__main__":
     game = Game(

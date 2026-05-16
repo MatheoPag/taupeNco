@@ -1,4 +1,5 @@
 # Librairie
+import random
 import tkinter as tk
 
 class Interface:
@@ -221,7 +222,17 @@ class Interface:
                     if self.game.phase == "placement":
                         self.network.send_action({"type": "place_pawn", "row": row, "col": col})
                     elif self.game.phase == "mouvement":
-                        self.network.send_action({"type": "next_player"})
+                        if self.game.sub_phase is None:
+                            self.game.sub_phase = "choix_disque"
+                        if self.game.sub_phase == "choix_disque":
+                            # On tire le disque cote client : un seul joueur envoie a la fois,
+                            # le broadcast garantit que tout le monde recoit la meme valeur.
+                            selected_idx = self._pick_random_disk()
+                            self.network.send_action({"type": "choose_disk", "disk_selected": selected_idx})
+                        elif self.game.sub_phase == "choix_pion":
+                            self.network.send_action({"type": "choose_pawn", "row": row, "col": col})
+                        elif self.game.sub_phase == "deplacement":
+                            self.network.send_action({"type": "move_chosen_pawn_to", "row": row, "col": col})
                     return
 
             # LOCAL ou HOST : on applique directement (logique d'origine)
@@ -234,18 +245,16 @@ class Interface:
                 if self.game.sub_phase is None:
                     self.game.sub_phase = "choix_disque"
                 if self.game.sub_phase == "choix_disque":
-                    self.game.try_choose_disk()
+                    selected_idx = self._pick_random_disk()
+                    self.game.try_choose_disk(selected_idx)
+                    action = {"type": "choose_disk", "disk_selected": selected_idx}
                 elif self.game.sub_phase == "choix_pion":
                     self.game.try_choose_pawn(row, col)
-                # elif self.game.sub_phase == "deplacement":
-                #     self.game.try_move_chosen_pawn_to(row, col)
-                # print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
-                # print("choix du pion")
-                # print(f"deplace un pion de la taille indiquée par le disque")
-                # old_player = self.game.players[self.game.current_player].name
-                # self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
-                # print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
-                # action = {"type": "next_player"}
+                    action = {"type": "choose_pawn", "row": row, "col": col}
+                elif self.game.sub_phase == "deplacement":
+                    self.game.try_move_chosen_pawn_to(row, col)
+                    action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
+                
 
             # HOST : on previent les clients de ce qu'on vient de jouer
             if self.role == "host" and action is not None:
@@ -307,6 +316,17 @@ class Interface:
             
         canvas_right.bind('<Configure>', draw_right)
 
+    # TEMPORAIRE : pour le moment, on tire au hasard le disque a choisir.
+    # Tire au hasard l'indice d'un disque non encore utilise du joueur courant.
+    # Retourne None s'il n'y a plus de disque disponible.
+    def _pick_random_disk(self):
+        disks = self.game.players[self.game.current_player].disks.get_disks()
+        available = {idx: d for idx, d in enumerate(disks) if d[1] == False}
+        if not available:
+            print("aucun disque disponible")
+            return None
+        return random.choice(list(available.keys()))
+
 
     # RESEAU : appele depuis un thread d'ecoute, on bascule sur le thread Tkinter
     def on_network_message(self, msg):
@@ -319,6 +339,12 @@ class Interface:
             self.game.try_place_current_pawn(msg["row"], msg["col"])
         elif action_type == "next_player":
             self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+        elif action_type == "choose_disk":
+            self.game.try_choose_disk(msg["disk_selected"])
+        elif action_type == "choose_pawn":
+            self.game.try_choose_pawn(msg["row"], msg["col"])
+        elif action_type == "move_chosen_pawn_to":
+            self.game.try_move_chosen_pawn_to(msg["row"], msg["col"])
         self.update_ui()
 
 

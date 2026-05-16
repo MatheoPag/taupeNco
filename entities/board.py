@@ -73,6 +73,22 @@ class Board:
                 grid[(q, r)] = 0
         return grid
 
+    def hex_delta(self, q1: int, r1: int, q2: int, r2: int) -> tuple[int, int, int]:
+        """Retourne (dq, dr, ds) entre deux cases axiales."""
+        dq, dr = q2 - q1, r2 - r1
+        return dq, dr, -(dq + dr)
+
+    def is_straight_line(self, q1: int, r1: int, q2: int, r2: int) -> bool:
+        """Vrai si (q1,r1)->(q2,r2) est une ligne droite hex (une des 6 directions)."""
+        if (q1, r1) == (q2, r2):
+            return False
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        return dq == 0 or dr == 0 or ds == 0
+
+    def hex_distance(self, q1: int, r1: int, q2: int, r2: int) -> int:
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        return max(abs(dq), abs(dr), abs(ds))
+
     def axial_to_2d(self, q: int, r: int) -> tuple[int, int]:
         """Convertit une coordonnee axiale (q, r) en indices 2D (ligne, colonne).
 
@@ -84,6 +100,13 @@ class Board:
         colonne = 2 * q + r + 2 * self.radius
         return ligne, colonne
 
+    def line_path(self, q1: int, r1: int, q2: int, r2: int) -> list[tuple[int, int]]:
+        """Liste des cases axiales entre (q1,r1) et (q2,r2) exclus, en ligne droite."""
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        n = max(abs(dq), abs(dr), abs(ds))
+        step_q, step_r = dq // n, dr // n
+        return [(q1 + i * step_q, r1 + i * step_r) for i in range(1, n)]
+    
     def from_2d_to_axial(self, ligne: int, colonne: int) -> tuple[int, int]:
         """Convertit des indices 2D (ligne, colonne) en coordonnees axiales (q, r).
 
@@ -136,9 +159,9 @@ class BoardPile:
     def __init__(self, colors:list[tuple[int, str]], size: int, board_orientation: list[int]) -> None:
         self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
             {
-                "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
+                "X": [],
+                "S": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
                     (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
-                "S": [],
             },
             {
                 "X": [(0, -4), (2, -3), (-1, -2), (3, -1)],
