@@ -3,7 +3,7 @@ from typing import Literal
 from . import board
 from . import golden_shovel
 from . import player
-
+import random 
 # 192.168.1.76
 
 class Game: 

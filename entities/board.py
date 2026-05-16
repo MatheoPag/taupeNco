@@ -159,9 +159,9 @@ class BoardPile:
     def __init__(self, colors:list[tuple[int, str]], size: int, board_orientation: list[int]) -> None:
         self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
             {
-                "X": [],
-                "S": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
+                "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
                     (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
+                "S": [],
             },
             {
                 "X": [(0, -4), (2, -3), (-1, -2), (3, -1)],
