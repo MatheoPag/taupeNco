@@ -74,7 +74,10 @@ class GameServer:
             pass
 
     def start(self):
-        """Accepte les clients jusqu'au nombre requis, puis retourne pour lancer la partie."""
+        """Accepte les clients jusqu'au nombre requis.
+
+        Puis retourne pour lancer la partie.
+        """
         self._running = True
         print("En attente de joueur...")
 
@@ -87,9 +90,10 @@ class GameServer:
 
             # Communique son ID au client qui vient de se connecter
             try:
-                conn.sendall(
-                    (json.dumps({"type": "assign_id", "player_id": player_id}) + "\n").encode("utf-8")
+                payload = json.dumps(
+                    {"type": "assign_id", "player_id": player_id}
                 )
+                conn.sendall((payload + "\n").encode("utf-8"))
             except OSError:
                 pass
 

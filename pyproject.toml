@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 88
+exclude = [
+    "frontend/test.py",       
+]
+
+[tool.ruff.lint]
+# Active seulement les règles de base au départ
+select = ["E", "F"]
+

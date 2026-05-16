@@ -1,5 +1,3 @@
-from typing import Literal
-
 from . import board
 from . import golden_shovel
 from . import player
@@ -7,18 +5,38 @@ import random
 # 192.168.1.76
 
 class Game: 
-    def __init__(self, nb_players: int, nb_bots: int, board_orientation: list[int]) -> None:
+    def __init__(self, 
+                nb_players: int, 
+                nb_bots: int, 
+                board_orientation: list[int]) -> None:
         self.board_size = 9
         self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6}
-        self.colors = [(0, "Surface"), (1, "Terre arable"), (2, "Sous-sol"), (3, "Roche mère")]
+        self.colors = [
+                (0, "Surface"),
+                (1, "Terre arable"),
+                (2, "Sous-sol"),
+                (3, "Roche mère"),
+            ]
         self.current_player = random.randint(0, nb_players + nb_bots - 1)
         players = (
-            [{"name": f"Player {i+1}", "color": self.colors[i]} for i in range(nb_players)]
-            + [{"name": f"Bot {i+1}",    "color": self.colors[i+nb_players]} for i in range(nb_bots)]
+            [
+                {"name": f"Player {i+1}", "color": self.colors[i]}
+                for i in range(nb_players)
+            ]
+            + [
+                {"name": f"Bot {i+1}", "color": self.colors[i + nb_players]}
+                for i in range(nb_bots)
+            ]
         )
         self.disk_selected = None
         self.pawn_selected = None
-        self.players = [player.Player(i, players[i]["name"], players[i]["color"], self.pawns_per_player[len(players)]) for i in range(len(players))]
+        self.players = [
+            player.Player(
+                i, 
+                players[i]["name"], 
+                players[i]["color"], 
+                self.pawns_per_player[len(players)]
+            ) for i in range(len(players))]
         self.boards = board.BoardPile(self.colors, self.board_size, board_orientation)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
@@ -29,15 +47,15 @@ class Game:
         self.golden_shovel = shovel
 
     def check_placement(self, players):
-        for player in players:
-            for pawn in player.pawns:
+        for p in players:
+            for pawn in p.pawns:
                 if pawn.position is None:
                     return False
         return True
 
     def cell_occupied_by_pawn(self, row, col):
-        for player in self.players:
-            for pawn in player.pawns:
+        for p in self.players:
+            for pawn in p.pawns:
                 pos = pawn.position
                 if not isinstance(pos, tuple) or len(pos) != 2:
                     continue
@@ -69,15 +87,26 @@ class Game:
 
         return True
 
-    def try_move_pawn_to_cell(self, pawn: player.Pawn, row: int, col: int, phase: str) -> bool:
-        """Valide la case pour la phase donnée et déplace le pion. Pas de changement de joueur ni de phase."""
+    def try_move_pawn_to_cell(self, 
+                            pawn: player.Pawn, 
+                            row: int, 
+                            col: int, 
+                            phase: str) -> bool:
+        """
+        Valide la case pour la phase donnée et déplace le pion. 
+        Pas de changement de joueur ni de phase.
+        """
         if not self.is_legal_target_cell(row, col, phase):
             return False
         pawn.move(row, col)
         return True
 
     def try_place_current_pawn(self, row: int, col: int) -> bool:
-        """Placement : choix automatique du prochain pion du joueur courant, puis coup si légal."""
+        """
+        Placement : 
+        - choix automatique du prochain pion du joueur courant,
+        - puis coup si légal.
+        """
         if self.phase != "placement":
             return False
 
@@ -142,7 +171,10 @@ class Game:
         return False
 
     def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
-        """Phase mouvement : déplace le pion désigné du joueur courant (passage de tour à ajouter plus tard)."""
+        """Phase mouvement : déplace le pion désigné du joueur courant.
+
+        (passage de tour à ajouter plus tard).
+        """
         if self.phase != "mouvement":
             return False
         if self.sub_phase is None:
@@ -151,8 +183,11 @@ class Game:
         if self.sub_phase == "deplacement":
             print("deplacement")
             cur = self.players[self.current_player]
-           
-            if cur.pawn_selected is None or not (0 <= cur.pawn_selected < len(cur.pawns)):
+
+            if (
+                cur.pawn_selected is None
+                or not (0 <= cur.pawn_selected < len(cur.pawns))
+            ):
                 print("le pion selectionné n'est pas valide")
                 return False
             pawn = cur.pawns[cur.pawn_selected]
@@ -170,13 +205,16 @@ class Game:
                 q1, r1 = board.from_2d_to_axial(pawn.position[0], pawn.position[1])
                 q2, r2 = board.from_2d_to_axial(row, col)
             except ValueError:
-                print("le deplacement n'est pas valide car les coordonnées sont hors du plateau")
+                print("le deplacement n'est pas valide \
+                car les coordonnées sont hors du plateau")
                 return False
             if not board.is_straight_line(q1, r1, q2, r2):
-                print("le deplacement n'est pas en ligne droite car les coordonnées ne sont pas en ligne droite")
+                print("le deplacement n'est pas en ligne droite car les \
+                    coordonnées ne sont pas en ligne droite")
                 return False
             if required_moves != board.hex_distance(q1, r1, q2, r2):
-                print("le deplacement n'est pas valide car le nombre de pas est incorrect")
+                print("le deplacement n'est pas valide car le nombre de pas \
+                est incorrect")
                 return False
             for pq, pr in board.line_path(q1, r1, q2, r2):
                 pl, pc = board.axial_to_2d(pq, pr)
@@ -184,14 +222,15 @@ class Game:
                     return False
             if self.try_move_pawn_to_cell(pawn, row, col, "mouvement"):
                 self.sub_phase = "choix_disque"
-                # Regle : atterrir sur une case speciale ("S") fait rejouer le joueur courant.
+                # Regle : atterrir sur une case speciale fait rejouer
                 if board.grid.get((q2, r2)) == "S":
                     print(f"Case speciale : {cur.name} rejoue.")
                 else:
                     self.current_player = (self.current_player + 1) % len(self.players)
                 return True
             else:
-                print("le deplacement n'est pas valide car la case est occupée par un autre pion")
+                print("le deplacement n'est pas valide car la case est \
+                occupée par un autre pion")
         return False
 
 if __name__ == "__main__":
