@@ -93,6 +93,9 @@ class Interface:
         self.update_ui()
         
     def update_ui(self):
+        print(f"Current phase : {self.game.phase}")
+        print(f"Current sub phase : {self.game.sub_phase}")
+        print(self.game.boards.get_top().to_2d_grid())
         self.center()
         self.right()
 
@@ -228,13 +231,21 @@ class Interface:
                 self.game.try_place_current_pawn(row, col)
                 action = {"type": "place_pawn", "row": row, "col": col}
             elif self.game.phase == "mouvement":
-                print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
-                print("choix du pion")
-                print(f"deplace un pion de la taille indiquée par le disque")
-                old_player = self.game.players[self.game.current_player].name
-                self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
-                print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
-                action = {"type": "next_player"}
+                if self.game.sub_phase is None:
+                    self.game.sub_phase = "choix_disque"
+                if self.game.sub_phase == "choix_disque":
+                    self.game.try_choose_disk()
+                elif self.game.sub_phase == "choix_pion":
+                    self.game.try_choose_pawn(row, col)
+                # elif self.game.sub_phase == "deplacement":
+                #     self.game.try_move_chosen_pawn_to(row, col)
+                # print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
+                # print("choix du pion")
+                # print(f"deplace un pion de la taille indiquée par le disque")
+                # old_player = self.game.players[self.game.current_player].name
+                # self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+                # print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
+                # action = {"type": "next_player"}
 
             # HOST : on previent les clients de ce qu'on vient de jouer
             if self.role == "host" and action is not None:
