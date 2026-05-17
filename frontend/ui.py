@@ -1,4 +1,5 @@
 # Librairie
+import random
 import tkinter as tk
 
 class Interface:
@@ -12,7 +13,8 @@ class Interface:
         # - host   : on applique en local ET on diffuse l'action aux clients
         # - client : on envoie l'action au serveur, l'action reviendra par le reseau
         self.role = role
-        self.network = network  # GameServer (host), GameClient (client), ou None (local)
+        # GameServer (host), GameClient (client), ou None (local)
+        self.network = network
         self.local_player_id = local_player_id
 
         self.colors = {
@@ -93,6 +95,9 @@ class Interface:
         self.update_ui()
         
     def update_ui(self):
+        print(f"Current phase : {self.game.phase}")
+        print(f"Current sub phase : {self.game.sub_phase}")
+        print(self.game.boards.get_top().to_2d_grid())
         self.center()
         self.right()
 
@@ -117,7 +122,11 @@ class Interface:
                 )
 
     def _setup_center_board(self):
-        canvas_circle = tk.Canvas(self.frame_center, bg=self.colors['background'], highlightthickness=0)
+        canvas_circle = tk.Canvas(
+            self.frame_center,
+            bg=self.colors['background'],
+            highlightthickness=0,
+        )
         self._canvas_circle = canvas_circle
         canvas_circle.pack(fill='both', expand=True)
 
@@ -129,7 +138,14 @@ class Interface:
             cx = w // 2 # NE PAS TOUCHER
             cy = h // 2 - 70 # NE PAS TOUCHER
             r = min(w, h) // 2.5  # NE PAS TOUCHER
-            self._canvas_circle.create_oval(cx - r, cy - r, cx + r, cy + r, outline=self.colors['border'], width=1)
+            self._canvas_circle.create_oval(
+                cx - r,
+                cy - r,
+                cx + r,
+                cy + r,
+                outline=self.colors['border'],
+                width=1,
+            )
 
         canvas_circle.bind('<Configure>', draw)
 
@@ -165,7 +181,12 @@ class Interface:
                         case 0:
                             r_node, size = 5, self.colors['layer0']
                             self._board_canvas.create_oval(
-                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                                x - r_node,
+                                y - r_node,
+                                x + r_node,
+                                y + r_node,
+                                fill=size,
+                                outline='',
                             )
         # 2ème couche : plateau (trous, cases spéciales)
         for r in range(rows):
@@ -178,12 +199,22 @@ class Interface:
                         case "X":
                             r_node, size = 20, self.colors['layer1']
                             self._board_canvas.create_oval(
-                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                                x - r_node,
+                                y - r_node,
+                                x + r_node,
+                                y + r_node,
+                                fill=size,
+                                outline='',
                             )
                         case "S":
                             r_node, size = 13, self.colors['layer0']
                             self._board_canvas.create_oval(
-                                x - r_node, y - r_node, x + r_node, y + r_node, fill=size, outline='',
+                                x - r_node,
+                                y - r_node,
+                                x + r_node,
+                                y + r_node,
+                                fill=size,
+                                outline='',
                             )
 
         def get_click_coordinate(event):
@@ -216,9 +247,39 @@ class Interface:
                 #          par on_network_message().
                 if self.role == "client":
                     if self.game.phase == "placement":
-                        self.network.send_action({"type": "place_pawn", "row": row, "col": col})
+                        self.network.send_action(
+                            {"type": "place_pawn", "row": row, "col": col}
+                        )
                     elif self.game.phase == "mouvement":
-                        self.network.send_action({"type": "next_player"})
+                        if self.game.sub_phase is None:
+                            self.game.sub_phase = "choix_disque"
+                        if self.game.sub_phase == "choix_disque":
+                            # On tire le disque cote client : un seul joueur
+                            # envoie a la fois, le broadcast garantit que
+                            # tout le monde recoit la meme valeur.
+                            selected_idx = self._pick_random_disk()
+                            self.network.send_action(
+                                {
+                                    "type": "choose_disk",
+                                    "disk_selected": selected_idx,
+                                }
+                            )
+                        elif self.game.sub_phase == "choix_pion":
+                            self.network.send_action(
+                                {
+                                    "type": "choose_pawn",
+                                    "row": row,
+                                    "col": col,
+                                }
+                            )
+                        elif self.game.sub_phase == "deplacement":
+                            self.network.send_action(
+                                {
+                                    "type": "move_chosen_pawn_to",
+                                    "row": row,
+                                    "col": col,
+                                }
+                            )
                     return
 
             # LOCAL ou HOST : on applique directement (logique d'origine)
@@ -228,13 +289,19 @@ class Interface:
                 self.game.try_place_current_pawn(row, col)
                 action = {"type": "place_pawn", "row": row, "col": col}
             elif self.game.phase == "mouvement":
-                print(f"choix du disque, un nombre entre 1 et {len(self.game.players[self.game.current_player].disks.get_disks())}")
-                print("choix du pion")
-                print(f"deplace un pion de la taille indiquée par le disque")
-                old_player = self.game.players[self.game.current_player].name
-                self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
-                print(f"on change de joueur {old_player} -> {self.game.players[self.game.current_player].name}")
-                action = {"type": "next_player"}
+                if self.game.sub_phase is None:
+                    self.game.sub_phase = "choix_disque"
+                if self.game.sub_phase == "choix_disque":
+                    selected_idx = self._pick_random_disk()
+                    self.game.try_choose_disk(selected_idx)
+                    action = {"type": "choose_disk", "disk_selected": selected_idx}
+                elif self.game.sub_phase == "choix_pion":
+                    self.game.try_choose_pawn(row, col)
+                    action = {"type": "choose_pawn", "row": row, "col": col}
+                elif self.game.sub_phase == "deplacement":
+                    self.game.try_move_chosen_pawn_to(row, col)
+                    action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
+                
 
             # HOST : on previent les clients de ce qu'on vient de jouer
             if self.role == "host" and action is not None:
@@ -255,12 +322,20 @@ class Interface:
         for w in self.frame_right.winfo_children():
             w.destroy()
 
-        canvas_right = tk.Canvas(self.frame_right, highlightthickness=0,width=0,height=0)
+        canvas_right = tk.Canvas(
+            self.frame_right, highlightthickness=0, width=0, height=0
+        )
         canvas_right.pack(fill='both', expand=True)
         player = self.game.players[self.game.current_player]
 
-        name, disks = player.name, player.disks.get_disks()
-        label_round = tk.Label(self.frame_right, text=f"Au tour de {name}", bg=self.colors['white'], fg=self.colors['black'],anchor = "n" )
+        name = player.name
+        label_round = tk.Label(
+            self.frame_right,
+            text=f"Au tour de {name}",
+            bg=self.colors['white'],
+            fg=self.colors['black'],
+            anchor="n",
+        )
 
         def draw_right(event):
             
@@ -274,14 +349,27 @@ class Interface:
             x1 = x0 + size
             y1 = y0 + size
 
-            canvas_right.create_rectangle(x0, y0, x1, y1, fill=self.colors['white'], outline=self.colors['border'], width=3)
-            label_round.place(x=w/2, y=h/2-40, anchor='center', width=size * 0.8, height=size * 0.35)
+            canvas_right.create_rectangle(
+                x0,
+                y0,
+                x1,
+                y1,
+                fill=self.colors['white'],
+                outline=self.colors['border'],
+                width=3,
+            )
+            label_round.place(
+                x=w / 2,
+                y=h / 2 - 40,
+                anchor='center',
+                width=size * 0.8,
+                height=size * 0.35,
+            )
             label_round.lift()
-            
-            
+
+
             cx = w // 2 # NE PAS TOUCHER
             cy = h // 2 + 10 # NE PAS TOUCHER (mat : je me suis permis de toucher)
-            r = min(w, h) // 20  # NE PAS TOUCHER
 
             canvas_pions = tk.Canvas(
                 canvas_right,
@@ -291,23 +379,49 @@ class Interface:
                 bg=self.colors['white'],
             )
 
-            canvas_right.create_window(cx, cy, window=canvas_pions, width=size * 0.7, height=size * 0.3)
+            canvas_right.create_window(
+                cx,
+                cy,
+                window=canvas_pions,
+                width=size * 0.7,
+                height=size * 0.3,
+            )
 
             
         canvas_right.bind('<Configure>', draw_right)
+
+    # TEMPORAIRE : pour le moment, on tire au hasard le disque a choisir.
+    # Tire au hasard l'indice d'un disque non encore utilise du joueur courant.
+    # Retourne None s'il n'y a plus de disque disponible.
+    def _pick_random_disk(self):
+        disks = self.game.players[self.game.current_player].disks.get_disks()
+        available = {idx: d for idx, d in enumerate(disks) if not d[1]}
+        if not available:
+            print("aucun disque disponible")
+            return None
+        return random.choice(list(available.keys()))
 
 
     # RESEAU : appele depuis un thread d'ecoute, on bascule sur le thread Tkinter
     def on_network_message(self, msg):
         self.root.after(0, lambda: self._apply_remote(msg))
 
-    # Applique une action venant du reseau (host : action d'un client, client : action broadcastee)
+    # Applique une action venant du reseau
+    # (host : action d'un client, client : action broadcastee)
     def _apply_remote(self, msg):
         action_type = msg.get("type")
         if action_type == "place_pawn":
             self.game.try_place_current_pawn(msg["row"], msg["col"])
         elif action_type == "next_player":
-            self.game.current_player = (self.game.current_player + 1) % len(self.game.players)
+            self.game.current_player = (
+                (self.game.current_player + 1) % len(self.game.players)
+            )
+        elif action_type == "choose_disk":
+            self.game.try_choose_disk(msg["disk_selected"])
+        elif action_type == "choose_pawn":
+            self.game.try_choose_pawn(msg["row"], msg["col"])
+        elif action_type == "move_chosen_pawn_to":
+            self.game.try_move_chosen_pawn_to(msg["row"], msg["col"])
         self.update_ui()
 
 

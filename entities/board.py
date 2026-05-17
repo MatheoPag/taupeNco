@@ -1,7 +1,11 @@
 import copy
 
 class Board:
-    def __init__(self, size: int, color, markers: dict[str, list[tuple[int, int]]], orientation: int) -> None:
+    def __init__(self, 
+                size: int, 
+                color: tuple[int, str], 
+                markers: dict[str, list[tuple[int, int]]], 
+                orientation: int) -> None:
         if size % 2 == 0:
             raise ValueError("La taille doit etre impaire")
         if size <= 0:
@@ -34,7 +38,8 @@ class Board:
             for q, r in self.markers.get(kind, []):
                 new_q, new_r = self._rotate_axial_60(q, r)
                 if (new_q, new_r) not in self.grid:
-                    raise ValueError(f"Rotation 60 deg : ({q}, {r}) sort du plateau -> ({new_q}, {new_r})")
+                    raise ValueError(f"Rotation 60 deg : ({q}, {r}) \
+                    sort du plateau -> ({new_q}, {new_r})")
                 rotated.append((new_q, new_r))
             self.markers[kind] = rotated
 
@@ -73,6 +78,22 @@ class Board:
                 grid[(q, r)] = 0
         return grid
 
+    def hex_delta(self, q1: int, r1: int, q2: int, r2: int) -> tuple[int, int, int]:
+        """Retourne (dq, dr, ds) entre deux cases axiales."""
+        dq, dr = q2 - q1, r2 - r1
+        return dq, dr, -(dq + dr)
+
+    def is_straight_line(self, q1: int, r1: int, q2: int, r2: int) -> bool:
+        """Vrai si (q1,r1)->(q2,r2) est une ligne droite hex (une des 6 directions)."""
+        if (q1, r1) == (q2, r2):
+            return False
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        return dq == 0 or dr == 0 or ds == 0
+
+    def hex_distance(self, q1: int, r1: int, q2: int, r2: int) -> int:
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        return max(abs(dq), abs(dr), abs(ds))
+
     def axial_to_2d(self, q: int, r: int) -> tuple[int, int]:
         """Convertit une coordonnee axiale (q, r) en indices 2D (ligne, colonne).
 
@@ -84,23 +105,32 @@ class Board:
         colonne = 2 * q + r + 2 * self.radius
         return ligne, colonne
 
+    def line_path(self, q1: int, r1: int, q2: int, r2: int) -> list[tuple[int, int]]:
+        """Liste des cases axiales entre (q1,r1) et (q2,r2) exclus, en ligne droite."""
+        dq, dr, ds = self.hex_delta(q1, r1, q2, r2)
+        n = max(abs(dq), abs(dr), abs(ds))
+        step_q, step_r = dq // n, dr // n
+        return [(q1 + i * step_q, r1 + i * step_r) for i in range(1, n)]
+    
     def from_2d_to_axial(self, ligne: int, colonne: int) -> tuple[int, int]:
         """Convertit des indices 2D (ligne, colonne) en coordonnees axiales (q, r).
 
         Inverse de axial_to_2d : r = ligne - radius, q = (colonne - ligne - radius) / 2.
-        Leve ValueError si les entiers ne tombent pas juste ou si (q, r) est hors plateau.
+        ValueError si les entiers ne tombent pas juste ou si (q, r) est hors plateau.
         """
         n = self.radius
         r = ligne - n
         num = colonne - ligne - n
         if num % 2 != 0:
             raise ValueError(
-                f"Coordonnees 2D incoherentes pour la projection hex : (ligne={ligne}, colonne={colonne})"
+                f"Coordonnees 2D incoherentes pour la projection hex : \
+                (ligne={ligne}, colonne={colonne})"
             )
         q = num // 2
         if (q, r) not in self.grid:
             raise ValueError(
-                f"Coordonnees 2D hors hexagone : (ligne={ligne}, colonne={colonne}) -> (q={q}, r={r})"
+                f"Coordonnees 2D hors hexagone : \
+                (ligne={ligne}, colonne={colonne}) -> (q={q}, r={r})"
             )
         return q, r
 
@@ -133,7 +163,10 @@ class Board:
             print()
 
 class BoardPile:
-    def __init__(self, colors:list[tuple[int, str]], size: int, board_orientation: list[int]) -> None:
+    def __init__(self, 
+                colors:list[tuple[int, str]], 
+                size: int,
+                board_orientation: list[int]) -> None:
         self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
             {
                 "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
@@ -158,7 +191,14 @@ class BoardPile:
         for i, color in enumerate(colors):
             layer_id = color[0]
             layer_markers = copy.deepcopy(self._markers_by_layer[layer_id])
-            self.pile.append(Board(size, color, markers=layer_markers, orientation=board_orientation[i]))
+            self.pile.append(
+                        Board(
+                            size=size, 
+                            color=color, 
+                            markers=layer_markers, 
+                            orientation=board_orientation[i]
+                            )
+                        )
         self.nb_boards = len(colors)
     
     def get_top(self) -> Board:
@@ -172,12 +212,10 @@ class BoardPile:
         return True if len(self.pile) > 0 else False
 
     def set_pile(self, pile: list) -> None:
-        """Remplace la pile complete de boards (utilise pour le chargement d'une save)."""
+        """
+        Remplace la pile complete de boards
+        utilise pour le chargement d'une save
+        """
         self.pile = pile
         self.nb_boards = len(pile)
     
-
-if __name__ == "__main__":
-    board_pile = BoardPile([(1, "Surface"), (2, "Terre arable"), (3, "Sous-sol"), (4, "Roche mère")], 9)
-    board_pile.get_top().print_grid()
-    print(board_pile.get_top().to_2d_grid())

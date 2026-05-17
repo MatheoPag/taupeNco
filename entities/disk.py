@@ -3,7 +3,13 @@ import random
 class Disks:
     def __init__(self, color: str) -> None:
         self.color = color
-        self.__disks = [[1, False], [2, False], [2, False], [3, False], [3, False], [4, False]]
+        self.__disks = [
+                [1, False],
+                [2, False],
+                [3, False],
+                [3, False],
+                [4, False],
+            ]
 
     def mix_disks(self) -> None:
         return random.shuffle(self.__disks)
@@ -16,7 +22,7 @@ class Disks:
             self.__disks[i][1] = False
     
     def show_disk(self, disk: int) -> int | None:
-        if self.__disks[disk][1] == True:
+        if self.__disks[disk][1]:
             return None
 
         self.__disks[disk][1] = True

@@ -9,6 +9,8 @@ class Player:
         self.last_pawn_moved = -1
         self.pawns = [pawn.Pawn(i, color) for i in range(1, nb_pawns + 1)]
         self.disks = disk.Disks(color)
+        self.disk_selected = None
+        self.pawn_selected = None
 
 
     def set_pawns(self, pawns: list) -> None:
