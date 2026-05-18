@@ -88,7 +88,7 @@ class Game:
         return True
 
     def try_move_pawn_to_cell(self, 
-                            pawn: player.Pawn, 
+                            pawn, 
                             row: int, 
                             col: int, 
                             phase: str) -> bool:
