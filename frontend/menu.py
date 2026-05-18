@@ -58,7 +58,6 @@ class Menu:
             'connexionmode' : None, # local OU multiplayer
             'gamemode' : None, # classic OU custom
             'nbplayer' : tk.IntVar(value=1), # 1, 2, 3 ou 4
-            'nbbot' : tk.IntVar(value=2), # 0, 1, 2 ou 3
             'iphost' : None, # Adresse IP de l'host d'une partie
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
@@ -262,7 +261,7 @@ class Menu:
 
 
     def _build_game_mode_page(self, title_text):
-        """Construit une page de choix du mode de jeu (joueurs, bots, classique/personnalisé)."""  # noqa: E501
+        """Construit une page de choix du mode de jeu (joueurs, classique/personnalisé)."""  # noqa: E501
         frame = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame.grid(row=0, column=0, sticky='nsew')
 
@@ -288,72 +287,30 @@ class Menu:
             frame_button_player,
             text="j1",
             variable=self.game_config['nbplayer'],
-            value=1,
-            command=self.max_bot,
+            value=1
         )
         button_player2 = tk.Radiobutton(
             frame_button_player,
             text="j2",
             variable=self.game_config['nbplayer'],
-            value=2,
-            command=self.max_bot,
+            value=2
         )
         button_player3 = tk.Radiobutton(
             frame_button_player,
             text="j3",
             variable=self.game_config['nbplayer'],
-            value=3,
-            command=self.max_bot,
+            value=3
         )
         button_player4 = tk.Radiobutton(
             frame_button_player,
             text="j4",
             variable=self.game_config['nbplayer'],
-            value=4,
-            command=self.max_bot,
+            value=4
         )
         button_player1.grid(row=0, column=0)
         button_player2.grid(row=0, column=1)
         button_player3.grid(row=0, column=2)
         button_player4.grid(row=0, column=3)
-
-        frame_button_bot = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_bot.pack(padx=30, pady=30)
-        frame_button_bot.grid_rowconfigure(0, weight=1)
-        frame_button_bot.grid_columnconfigure(3, weight=1)
-
-        button_bot1 = tk.Radiobutton(
-            frame_button_bot,
-            text="sans bot",
-            variable=self.game_config['nbbot'],
-            value=1,
-            command=self.max_bot,
-        )
-        button_bot2 = tk.Radiobutton(
-            frame_button_bot,
-            text="1bot",
-            variable=self.game_config['nbbot'],
-            value=2,
-            command=self.max_bot,
-        )
-        button_bot3 = tk.Radiobutton(
-            frame_button_bot,
-            text="2bot",
-            variable=self.game_config['nbbot'],
-            value=3,
-            command=self.max_bot,
-        )
-        button_bot4 = tk.Radiobutton(
-            frame_button_bot,
-            text="3bot",
-            variable=self.game_config['nbbot'],
-            value=4,
-            command=self.max_bot,
-        )
-        button_bot1.grid(row=0, column=0)
-        button_bot2.grid(row=0, column=1)
-        button_bot3.grid(row=0, column=2)
-        button_bot4.grid(row=0, column=3)
 
         label_gamemode_title = tk.Label(
             frame,
@@ -417,27 +374,12 @@ class Menu:
 
 
     # CONFIG LOCAL 
-        # Évite des parties à plus de 4 'entités' (joueur ou bot)
-    def max_bot(self):
-        nb_players = self.game_config['nbplayer'].get()
-
-        max_bots = 5 - nb_players
-        nb_bots = self.game_config['nbbot'].get()
-
-        if nb_bots > max_bots :
-            self.game_config['nbbot'].set(max_bots)
-
-        if nb_players == 1 and self.game_config['nbbot'].get() == 1: # Un joueur seul, joue forcément avec un bot  # noqa: E501
-            self.game_config['nbbot'].set(2)
-    
-
         # Renvoi la configuration de la partie (locale)
     def create_local_classic(self):
         self.game_config['gamemode'] = 'classic'
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-        self.game_config['nbbot'] = self.game_config['nbbot'].get()-1
 
         self.root.destroy()
 
@@ -446,25 +388,23 @@ class Menu:
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-        self.game_config['nbbot'] = self.game_config['nbbot'].get()
 
         self.root.destroy()
 
 
     # CONFIG MULTIJOUEUR (hôte)
-    def _finalize_multiplayer_host(self, gamemode, nbbot):
+    def _finalize_multiplayer_host(self, gamemode):
         self.game_config['gamemode'] = gamemode
         self.game_config['iphost'] = get_local_ip()
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-        self.game_config['nbbot'] = nbbot
         self.root.destroy()
 
     def create_multiplayer_classic(self):
-        self._finalize_multiplayer_host('classic', self.game_config['nbbot'].get() - 1)
+        self._finalize_multiplayer_host('classic')
 
     def create_multiplayer_custom(self):
-        self._finalize_multiplayer_host('custom', self.game_config['nbbot'].get())
+        self._finalize_multiplayer_host('custom')
 
 
     # CONFIG ONLINE
@@ -504,7 +444,6 @@ class Menu:
         if self.check_ip(ip):
             self.game_config['gamemode'] = None
             self.game_config['nbplayer'] = None
-            self.game_config['nbbot'] = None
             self.game_config['iphost'] = 'None'
             self.game_config['iptarget'] = ip
             self.root.destroy()
