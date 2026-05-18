@@ -56,8 +56,8 @@ class Menu:
         # Création du dictionnaire pour la configuration du mode de jeu
         self.game_config = {
             'connexionmode' : None, # local OU multiplayer
-            'gamemode' : None, # classic OU custom
-            'nbplayer' : tk.IntVar(value=1), # 1, 2, 3 ou 4
+            'gamemode' : None, # classic, solobot OU custom
+            'nbplayer' : tk.IntVar(value=1), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
@@ -74,9 +74,10 @@ class Menu:
         frame_connexion_mode.grid(row=0, column=0, sticky='nsew')
         frame_connexion_mode.grid_rowconfigure(0, weight=1)
         frame_connexion_mode.grid_rowconfigure(1, weight=1)
-        frame_connexion_mode.grid_rowconfigure(2, weight=1)
+        frame_connexion_mode.grid_rowconfigure(2, weight=3)
         frame_connexion_mode.grid_columnconfigure(0, weight=1)
 
+            # Titre
         label_title = tk.Label(
             frame_connexion_mode,
             text="Taupes & compagnie",
@@ -85,21 +86,24 @@ class Menu:
         )
         label_title.grid(row=0, column=0, sticky='nsew')
 
+            # Sous-titre
         label_welcome_title = tk.Label(
             frame_connexion_mode,
-            text="Choisissez un mode de connexion :",
+            text="Choisissez un mode de jeu :",
             font=('', 16),
             bg=self.colors['background'],
         )
         label_welcome_title.grid(row=1, column=0, sticky='nsew')
 
-        frame_button_connexion = tk.Frame(
-            frame_connexion_mode, bg=self.colors['background']
+            # Frame des boutons
+        frame_buttons = tk.Frame(
+            frame_connexion_mode, bg=self.colors['layer0']
         )
-        frame_button_connexion.grid(row=2, column=0, sticky='nsew')
+        frame_buttons.grid(row=2, column=0, sticky='nsew')
 
+            # 1 - Mode local
         frame_button_local = tk.Frame(
-            frame_button_connexion, bg=self.colors['border'], padx=2, pady=2
+            frame_buttons, bg=self.colors['border'], padx=2, pady=2
         )
         frame_button_local.pack(padx=20, pady=20, ipady=10, fill='x')
         button_local = tk.Button(
@@ -112,8 +116,25 @@ class Menu:
         )
         button_local.pack(fill='both', expand=True)
 
+            # 2 - Mode ordinateur
+        frame_button_bot = tk.Frame(
+            frame_buttons, bg=self.colors['border'], padx=2, pady=2
+        )
+        frame_button_bot.pack(padx=20, pady=20, ipady=10, fill='x')
+        button_bot = tk.Button(
+            frame_button_bot,
+            text="1vs1 Ordinateur",
+            font=('', 16),
+            bg=self.colors['grey'],
+            bd=0,
+            relief='flat',
+            command=self.create_local_solo
+        )
+        button_bot.pack(fill='both', expand=True)
+
+            # 3 - Mode en ligne
         frame_button_online = tk.Frame(
-            frame_button_connexion, bg=self.colors['border'], padx=2, pady=2
+            frame_buttons, bg=self.colors['border'], padx=2, pady=2
         )
         frame_button_online.pack(padx=20, pady=20, ipady=10, fill='x')
         button_online = tk.Button(
@@ -126,8 +147,9 @@ class Menu:
         )
         button_online.pack(fill='both', expand=True)
 
+            # 4 - Quitter le jeu
         frame_button_quit = tk.Frame(
-            frame_button_connexion, bg=self.colors['border'], padx=2, pady=2
+            frame_buttons, bg=self.colors['border'], padx=2, pady=2
         )
         frame_button_quit.pack(padx=20, pady=20, ipady=10, fill='x')
         button_quit = tk.Button(
@@ -261,7 +283,7 @@ class Menu:
 
 
     def _build_game_mode_page(self, title_text):
-        """Construit une page de choix du mode de jeu (joueurs, classique/personnalisé)."""  # noqa: E501
+        """Construit une page de choix du mode de jeu (joueurs, classique/personnalisé)."""
         frame = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame.grid(row=0, column=0, sticky='nsew')
 
@@ -281,14 +303,8 @@ class Menu:
         frame_button_player = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
         frame_button_player.pack(padx=20, pady=20)
         frame_button_player.grid_rowconfigure(0, weight=1)
-        frame_button_player.grid_columnconfigure(3, weight=1)
+        frame_button_player.grid_columnconfigure(2, weight=1)
 
-        button_player1 = tk.Radiobutton(
-            frame_button_player,
-            text="j1",
-            variable=self.game_config['nbplayer'],
-            value=1
-        )
         button_player2 = tk.Radiobutton(
             frame_button_player,
             text="j2",
@@ -307,10 +323,9 @@ class Menu:
             variable=self.game_config['nbplayer'],
             value=4
         )
-        button_player1.grid(row=0, column=0)
-        button_player2.grid(row=0, column=1)
-        button_player3.grid(row=0, column=2)
-        button_player4.grid(row=0, column=3)
+        button_player2.grid(row=0, column=0)
+        button_player3.grid(row=0, column=1)
+        button_player4.grid(row=0, column=2)
 
         label_gamemode_title = tk.Label(
             frame,
@@ -391,6 +406,16 @@ class Menu:
 
         self.root.destroy()
 
+        # Mode solo
+    def create_local_solo(self):
+        self.game_config['connexionmode'] ='local'
+        self.game_config['gamemode'] = 'solobot'
+        self.game_config['iphost'] = 'None'
+        self.game_config['iptarget'] = 'None'
+        self.game_config['nbplayer'] = 1
+
+        self.root.destroy()
+
 
     # CONFIG MULTIJOUEUR (hôte)
     def _finalize_multiplayer_host(self, gamemode):
@@ -420,7 +445,7 @@ class Menu:
             p2 = int(parts[1])
             p3 = int(parts[2])
             p4 = int(parts[3])
-        except:  # noqa: E722
+        except:
             return False
 
         if p1 == 1 and p2 == 1 and p3 == 1 and p4 == 1:
@@ -448,7 +473,7 @@ class Menu:
             self.game_config['iptarget'] = ip
             self.root.destroy()
         else:
-            messagebox.showwarning("Erreur", "L'adresse IP n'est pas conforme. Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)")  # noqa: E501
+            messagebox.showwarning("Erreur", "L'adresse IP n'est pas conforme. Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)")
 
 
     # Affichage des pages
