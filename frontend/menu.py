@@ -1,6 +1,7 @@
 # Librairie
 import tkinter as tk
 from tkinter import messagebox
+import pygame
 from system.server import get_local_ip
 
 class Menu:
@@ -68,8 +69,18 @@ class Menu:
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
 
+        # Lancement de la musique du menu
+        #self.play_music()
+
         # Création des pages
         self._build_pages()
+    
+    # Musique du menu
+    def play_music(self):
+        song = pygame.mixer.music
+        song.init()
+        song.load("frontend/ressources/musics/Overture_Super-Mario-Galaxy.mp3")
+        song.play(-1)
 
 
     # Construction des pages
