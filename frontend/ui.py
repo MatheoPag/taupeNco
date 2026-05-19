@@ -378,6 +378,18 @@ class Interface:
                 highlightcolor=self.colors['border'],
                 bg=self.colors['white'],
             )
+            
+            test_data = [ # liste de liste a remplacer par la liste de mat
+                [1, True],
+                [2, False],
+                [2, True],
+                [3, False],
+                [3, True],
+                [4, True],
+]
+
+            self.draw_pions(canvas_pions, test_data)
+
 
             canvas_right.create_window(
                 cx,
@@ -389,6 +401,31 @@ class Interface:
 
             
         canvas_right.bind('<Configure>', draw_right)
+        
+    def draw_pions(self, canvas, data):
+        canvas.delete("all")
+        rayon = 10
+        espace_x = 30
+        espace_y = 20
+
+        for i, (valeur, visible) in enumerate(data):
+            colonons = i % 3
+            row = i // 3
+            x = 20 + colonons * espace_x # a peu pres centrer mais faudra modifier le 20
+            y =10 + row * espace_y
+            if visible:
+                texte = str(valeur)
+            else:
+                texte = "?"
+                
+            canvas.create_oval(x - rayon, y - rayon, x + rayon, y + rayon, outline='black',width=1)
+            
+            canvas.create_text(x,y,text=texte)    
+            
+        
+        
+        
+        
 
     # TEMPORAIRE : pour le moment, on tire au hasard le disque a choisir.
     # Tire au hasard l'indice d'un disque non encore utilise du joueur courant.
