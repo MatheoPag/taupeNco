@@ -343,7 +343,7 @@ class Interface:
             w = event.width 
             h = event.height
             
-            size = min(w, h) * 0.6
+            size = min(w, h) * 0.7
             x0 = (w - size) / 2
             y0 = (h - size) / 2
             x1 = x0 + size
@@ -388,39 +388,47 @@ class Interface:
                 [4, True],
 ]
 
-            self.draw_pions(canvas_pions, test_data)
+            self.draw_pions(canvas_pions, test_data, on_click=lambda idx: print(idx))
 
 
             canvas_right.create_window(
                 cx,
-                cy,
+                cy+20,
                 window=canvas_pions,
-                width=size * 0.7,
-                height=size * 0.3,
+                width=size * 0.9,
+                height=size * 0.6,
             )
 
             
         canvas_right.bind('<Configure>', draw_right)
         
-    def draw_pions(self, canvas, data):
+    def draw_pions(self, canvas, data,on_click=None):
         canvas.delete("all")
-        rayon = 10
-        espace_x = 30
-        espace_y = 20
+        rayon = 18
+        espace_x = 45
+        espace_y = 40
 
         for i, (valeur, visible) in enumerate(data):
             colonons = i % 3
             row = i // 3
-            x = 20 + colonons * espace_x # a peu pres centrer mais faudra modifier le 20
-            y =10 + row * espace_y
+            x = 35 + colonons * espace_x # a peu pres centrer mais faudra modifier le 20
+            y =35 + row * espace_y
             if visible:
                 texte = str(valeur)
             else:
                 texte = "?"
                 
-            canvas.create_oval(x - rayon, y - rayon, x + rayon, y + rayon, outline='black',width=1)
+                
+            coins = tk.Canvas(canvas, width=rayon*2, height=rayon*2,bg=self.colors['white'],highlightthickness=0)
+        
+            coins.create_oval(0, 0, rayon*2, rayon*2,fill=self.colors['grey'], outline=self.colors['border'], width=1)
+
+            btn = tk.Button(coins,text=texte,width=3,height=1,bg=self.colors['background'],relief='flat', bd=0,highlightthickness=0,
+                command=lambda idx=i: on_click(idx) if on_click else None, # cree une fonction avec idx i en parametre et on_click en resultat
+            )
             
-            canvas.create_text(x,y,text=texte)    
+            coins.create_window(rayon,rayon,window=btn)  
+            canvas.create_window(x,y,window = coins)  
             
         
         
