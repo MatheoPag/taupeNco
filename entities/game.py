@@ -17,6 +17,8 @@ class Game:
                 (2, "Sous-sol"),
                 (3, "Roche mère"),
             ]
+        self.nb_human_players = nb_players
+        self.nb_bots = nb_bots
         self.current_player = random.randint(0, nb_players + nb_bots - 1)
         players = (
             [
@@ -24,7 +26,7 @@ class Game:
                 for i in range(nb_players)
             ]
             + [
-                {"name": f"Bot {i+1}", "color": self.colors[i + nb_players]}
+                {"name": f"Bot", "color": self.colors[i + nb_players]}
                 for i in range(nb_bots)
             ]
         )
@@ -41,7 +43,32 @@ class Game:
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
-        self.legal_moves: list[tuple[int, int]] | None = None
+        self.legal_moves = None
+        self._pending_disk_sync = None
+
+        for p in self.players:
+            p.disks.mix_disks()
+
+    def is_bot(self, player_id: int | None = None) -> bool:
+        if player_id is None:
+            player_id = self.current_player
+        return player_id >= self.nb_human_players
+
+    def get_players_disks_state(self) -> list[list[list[int]]]:
+        """Etat des disques de chaque joueur (pour la synchro reseau)."""
+        return [p.disks.get_disks() for p in self.players]
+
+    def apply_players_disks_state(self, players_disks: list[list[list[int]]]) -> None:
+        """Applique l'etat des disques recu de l'hote."""
+        for player, disks in zip(self.players, players_disks):
+            player.disks.set_disks(disks)
+
+    def consume_disk_sync(self) -> dict | None:
+        """Retourne et efface la synchro disques en attente (apres mix hote)."""
+        payload = self._pending_disk_sync
+        self._pending_disk_sync = None
+        return payload
+
 
     def set_golden_shovel(self, shovel) -> None:
         """Remplace la golden shovel (utilise pour le chargement d'une save)."""
@@ -143,9 +170,8 @@ class Game:
             print(f"disque selectionné : {disk}")
             self.sub_phase = "choix_pion"
             update_ui()
-            # if cur_player.disks.is_all_disk_visible():
-            #     cur_player.disks.hide_all_disks()
-            #     cur_player.disks.mix_disks()
+
+
             return True
         return False
 
@@ -209,10 +235,12 @@ class Game:
         return cases_possibles
 
 
-    def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
+    def try_move_chosen_pawn_to(
+        self, row: int, col: int, shuffle_disks: bool = True
+    ) -> bool:
         """Phase mouvement : déplace le pion désigné du joueur courant.
 
-        (passage de tour à ajouter plus tard).
+        shuffle_disks : False sur les clients (l'hote melange et diffuse).
         """
         if self.phase != "mouvement":
             return False
@@ -258,7 +286,12 @@ class Game:
 
                 if cur.disks.is_all_disk_visible():
                     cur.disks.hide_all_disks()
-                    cur.disks.mix_disks()
+                    if shuffle_disks:
+                        cur.disks.mix_disks()
+                        self._pending_disk_sync = {
+                            "player_id": cur.id,
+                            "disks": cur.disks.get_disks(),
+                        }
                 return True
             print("le deplacement n'est pas valide car la case est \
                 occupée par un autre pion")
