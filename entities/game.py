@@ -10,7 +10,7 @@ class Game:
                 nb_bots: int, 
                 board_orientation: list[int]) -> None:
         self.board_size = 9
-        self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6}
+        self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
         self.colors = [
                 (0, "Surface"),
                 (1, "Terre arable"),
@@ -95,7 +95,7 @@ class Game:
         return False
 
     def is_legal_target_cell(self, row: int, col: int, phase: str) -> bool:
-        """Vérifie si (row, col) est une case cible valide selon la phase."""
+        """Verifie si (row, col) est une case cible valide selon la phase."""
         if phase not in ("placement", "mouvement"):
             return False
 
@@ -121,7 +121,7 @@ class Game:
                             col: int, 
                             phase: str) -> bool:
         """
-        Valide la case pour la phase donnée et déplace le pion. 
+        Valide la case pour la phase donnee et deplace le pion. 
         Pas de changement de joueur ni de phase.
         """
         if not self.is_legal_target_cell(row, col, phase):
@@ -133,7 +133,7 @@ class Game:
         """
         Placement : 
         - choix automatique du prochain pion du joueur courant,
-        - puis coup si légal.
+        - puis coup si legal.
         """
         if self.phase != "placement":
             return False
@@ -167,7 +167,7 @@ class Game:
             cur_player.disk_selected = disk_selected
             disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
-            print(f"disque selectionné : {disk}")
+            print(f"disque selectionne : {disk}")
             self.sub_phase = "choix_pion"
             update_ui()
 
@@ -193,7 +193,7 @@ class Game:
                         pawn_found = (pawn, idx)
                         break
             if not pawn_found:
-                print("Le pion sélectionné n'appartient pas au joueur courant.")
+                print("Le pion selectionne n'appartient pas au joueur courant.")
                 return False
             current_player.pawn_selected = pawn_found[1]
             self.legal_moves = self.possible_moves(
@@ -238,7 +238,7 @@ class Game:
     def try_move_chosen_pawn_to(
         self, row: int, col: int, shuffle_disks: bool = True
     ) -> bool:
-        """Phase mouvement : déplace le pion désigné du joueur courant.
+        """Phase mouvement : deplace le pion designe du joueur courant.
 
         shuffle_disks : False sur les clients (l'hote melange et diffuse).
         """
@@ -255,7 +255,7 @@ class Game:
                 cur.pawn_selected is None
                 or not (0 <= cur.pawn_selected < len(cur.pawns))
             ):
-                print("le pion selectionné n'est pas valide")
+                print("le pion selectionne n'est pas valide")
                 return False
             pawn = cur.pawns[cur.pawn_selected]
             if pawn.position is None:
@@ -263,7 +263,7 @@ class Game:
                 return False
 
             if cur.disk_selected is None:
-                print("le disque selectionné n'est pas valide")
+                print("le disque selectionne n'est pas valide")
                 return False
 
             if (row, col) not in self.possible_moves(
@@ -294,7 +294,7 @@ class Game:
                         }
                 return True
             print("le deplacement n'est pas valide car la case est \
-                occupée par un autre pion")
+                occupee par un autre pion")
         return False
 
 if __name__ == "__main__":
