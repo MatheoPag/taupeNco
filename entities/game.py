@@ -127,7 +127,7 @@ class Game:
             self.phase = "mouvement"
         return True
 
-    def try_choose_disk(self, disk_selected: int) -> bool:
+    def try_choose_disk(self, disk_selected: int, update_ui) -> bool:
         """Phase mouvement : choix du disque."""
         if self.phase != "mouvement":
             return False
@@ -136,11 +136,16 @@ class Game:
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
-            self.players[self.current_player].disk_selected = disk_selected
-            disk = self.players[self.current_player].disks.get_disks()[disk_selected]
+            cur_player = self.players[self.current_player] 
+            cur_player.disk_selected = disk_selected
+            disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
             print(f"disque selectionné : {disk}")
             self.sub_phase = "choix_pion"
+            update_ui()
+            # if cur_player.disks.is_all_disk_visible():
+            #     cur_player.disks.hide_all_disks()
+            #     cur_player.disks.mix_disks()
             return True
         return False
 
@@ -202,7 +207,7 @@ class Game:
                 continue
             cases_possibles.append((row, col))
         return cases_possibles
-   
+
 
     def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
         """Phase mouvement : déplace le pion désigné du joueur courant.
@@ -250,6 +255,10 @@ class Game:
                     self.current_player = (
                         (self.current_player + 1) % len(self.players)
                     )
+
+                if cur.disks.is_all_disk_visible():
+                    cur.disks.hide_all_disks()
+                    cur.disks.mix_disks()
                 return True
             print("le deplacement n'est pas valide car la case est \
                 occupée par un autre pion")

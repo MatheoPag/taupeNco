@@ -6,6 +6,7 @@ class Disks:
         self.__disks = [
                 [1, False],
                 [2, False],
+                [2, False],
                 [3, False],
                 [3, False],
                 [4, False],
@@ -17,6 +18,12 @@ class Disks:
     def get_disks(self) -> list[list[int]]:
         return self.__disks
     
+    def is_all_disk_visible(self) -> bool:
+        for i in range(len(self.__disks)):
+            if self.__disks[i][1] == False:
+                return False
+        return True
+
     def hide_all_disks(self) -> None:
         for i in range(len(self.__disks)):
             self.__disks[i][1] = False

@@ -97,7 +97,6 @@ class Interface:
     def update_ui(self):
         print(f"Current phase : {self.game.phase}")
         print(f"Current sub phase : {self.game.sub_phase}")
-        print(self.game.boards.get_top().to_2d_grid())
         self.center()
         self.right()
 
@@ -291,10 +290,10 @@ class Interface:
             elif self.game.phase == "mouvement":
                 if self.game.sub_phase is None:
                     self.game.sub_phase = "choix_disque"
-                if self.game.sub_phase == "choix_disque":
-                    selected_idx = self._pick_random_disk()
-                    self.game.try_choose_disk(selected_idx)
-                    action = {"type": "choose_disk", "disk_selected": selected_idx}
+                # if self.game.sub_phase == "choix_disque":
+                #     # selected_idx = self._pick_random_disk()
+                #     self.game.try_choose_disk(selected_idx)
+                    # action = {"type": "choose_disk", "disk_selected": selected_idx}
                 elif self.game.sub_phase == "choix_pion":
                     self.game.try_choose_pawn(row, col)
                     action = {"type": "choose_pawn", "row": row, "col": col}
@@ -310,6 +309,7 @@ class Interface:
             self.update_ui()
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
+
 
     # WIDGET PARTIE CENTRE
     def center(self):
@@ -378,17 +378,11 @@ class Interface:
                 highlightcolor=self.colors['border'],
                 bg=self.colors['white'],
             )
-            
-            test_data = [ # liste de liste a remplacer par la liste de mat
-                [1, True],
-                [2, False],
-                [2, True],
-                [3, False],
-                [3, True],
-                [4, True],
-]
 
-            self.draw_pions(canvas_pions, test_data, on_click=lambda idx: print(idx))
+            cur_player = self.game.players[self.game.current_player]
+            data = cur_player.disks.get_disks()
+
+            self.draw_pions(canvas_pions, data, on_click=lambda idx: self.game.try_choose_disk(idx, self.update_ui)) # recuperer l'idx du disque
 
 
             canvas_right.create_window(
@@ -397,7 +391,7 @@ class Interface:
                 window=canvas_pions,
                 width=size * 0.9,
                 height=size * 0.6,
-            )
+            )            
 
             
         canvas_right.bind('<Configure>', draw_right)
