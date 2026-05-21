@@ -41,6 +41,7 @@ class Game:
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
+        self.legal_moves: list[tuple[int, int]] | None = None
 
     def set_golden_shovel(self, shovel) -> None:
         """Remplace la golden shovel (utilise pour le chargement d'une save)."""
@@ -134,6 +135,7 @@ class Game:
             self.sub_phase = "choix_disque"
         if self.sub_phase == "choix_disque":
             print("choix du disque")
+            self.legal_moves = None
             self.players[self.current_player].disk_selected = disk_selected
             disk = self.players[self.current_player].disks.get_disks()[disk_selected]
             disk[1] = True
@@ -162,13 +164,45 @@ class Game:
             if not pawn_found:
                 print("Le pion sélectionné n'appartient pas au joueur courant.")
                 return False
-            # On sélectionne ce pion pour le déplacement
             current_player.pawn_selected = pawn_found[1]
- 
+            self.legal_moves = self.possible_moves(
+                pawn_found[1], current_player.disk_selected
+            )
             self.sub_phase = "deplacement"
             return True
 
         return False
+
+    def possible_moves(self, pawn_index, disk_index: int) -> list[tuple[int, int]]:
+        pawn = self.players[self.current_player].pawns[pawn_index]
+        n = self.players[self.current_player].disks.get_disks()[disk_index][0]
+
+        if pawn.position is None:
+            return []
+        board = self.boards.get_top()
+        q1, r1 = board.from_2d_to_axial(pawn.position[0], pawn.position[1])
+        cases_possibles = []
+
+        for (q2, r2) in board.grid:
+            row, col = board.axial_to_2d(q2, r2)
+            dist = board.hex_distance(q1, r1, q2, r2)
+            if dist != n:
+                continue
+            if not board.is_straight_line(q1, r1, q2, r2):
+                continue
+            chemin_bloque = False
+            for pq, pr in board.line_path(q1, r1, q2, r2):
+                pl, pc = board.axial_to_2d(pq, pr)
+                if self.cell_occupied_by_pawn(pl, pc):
+                    chemin_bloque = True
+                    break
+            if chemin_bloque:
+                continue
+            if not self.is_legal_target_cell(row, col, "mouvement"):
+                continue
+            cases_possibles.append((row, col))
+        return cases_possibles
+   
 
     def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
         """Phase mouvement : déplace le pion désigné du joueur courant.
@@ -194,42 +228,30 @@ class Game:
             if pawn.position is None:
                 print("le pion n'est pas sur le plateau")
                 return False
-            
+
             if cur.disk_selected is None:
                 print("le disque selectionné n'est pas valide")
                 return False
-            required_moves = cur.disks.get_disks()[cur.disk_selected][0]
-            
+
+            if (row, col) not in self.possible_moves(
+                cur.pawn_selected, cur.disk_selected
+            ):
+                print("le deplacement n'est pas valide")
+                return False
+
             board = self.boards.get_top()
-            try :
-                q1, r1 = board.from_2d_to_axial(pawn.position[0], pawn.position[1])
-                q2, r2 = board.from_2d_to_axial(row, col)
-            except ValueError:
-                print("le deplacement n'est pas valide \
-                car les coordonnées sont hors du plateau")
-                return False
-            if not board.is_straight_line(q1, r1, q2, r2):
-                print("le deplacement n'est pas en ligne droite car les \
-                    coordonnées ne sont pas en ligne droite")
-                return False
-            if required_moves != board.hex_distance(q1, r1, q2, r2):
-                print("le deplacement n'est pas valide car le nombre de pas \
-                est incorrect")
-                return False
-            for pq, pr in board.line_path(q1, r1, q2, r2):
-                pl, pc = board.axial_to_2d(pq, pr)
-                if self.cell_occupied_by_pawn(pl, pc):
-                    return False
             if self.try_move_pawn_to_cell(pawn, row, col, "mouvement"):
                 self.sub_phase = "choix_disque"
-                # Regle : atterrir sur une case speciale fait rejouer
+                self.legal_moves = None
+                q2, r2 = board.from_2d_to_axial(row, col)
                 if board.grid.get((q2, r2)) == "S":
                     print(f"Case speciale : {cur.name} rejoue.")
                 else:
-                    self.current_player = (self.current_player + 1) % len(self.players)
+                    self.current_player = (
+                        (self.current_player + 1) % len(self.players)
+                    )
                 return True
-            else:
-                print("le deplacement n'est pas valide car la case est \
+            print("le deplacement n'est pas valide car la case est \
                 occupée par un autre pion")
         return False
 
