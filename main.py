@@ -7,19 +7,19 @@ from system.server import GameServer
 from system.client import GameClient
 
 
-def start_local(nbplayer, nbbot):
-    game_instance = game_entity.Game(nbplayer, nbbot, [0, 0, 0, 0])
+def start_local(nbplayer):
+    game_instance = game_entity.Game(nbplayer, 0, [0, 0, 0, 0])
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
 
 
-def start_host(nbplayer, nbbot, host_ip):
+def start_host(nbplayer, host_ip):
     print(f"Partie hébergée - IP à partager : {host_ip}:5555")
     game_server = GameServer(max_player=nbplayer, host="0.0.0.0", port=5555)
     game_server.start()
 
     print("Initialisation de la partie...")
-    game_instance = game_entity.Game(nbplayer, nbbot, [0, 0, 0, 0])
+    game_instance = game_entity.Game(nbplayer, 0, [0, 0, 0, 0])
 
     game_ui = ui.Interface(
         game_instance,
@@ -36,7 +36,6 @@ def start_host(nbplayer, nbbot, host_ip):
     game_server.send_data({
         "type": "game_start",
         "nbplayer": nbplayer,
-        "nbbot": nbbot,
         "current_player": game_instance.current_player,
     })
 
@@ -76,9 +75,9 @@ def start_client(target_ip):
     ready_event.wait()
 
     data = start_data["value"]
-    print(f"Partie démarrée : {data['nbplayer']} joueur(s), {data['nbbot']} bot(s).")
+    print(f"Partie démarrée : {data['nbplayer']} joueur(s).")
 
-    game_instance = game_entity.Game(data["nbplayer"], data["nbbot"], [0, 0, 0, 0])
+    game_instance = game_entity.Game(data["nbplayer"], 0, [0, 0, 0, 0])
     # On force le current_player pour etre synchronise avec l'hote
     game_instance.current_player = data["current_player"]
 
@@ -98,13 +97,16 @@ if __name__ == "__main__":
     print(game_config)
 
     if game_config["connexionmode"] == "local":
-        start_local(game_config["nbplayer"], game_config["nbbot"])
+        if game_config['nbplayer'] > 1:
+            start_local(game_config["nbplayer"])
+        else:
+            print("Lancement partie 1VS1 contre bot.")
+            # Intégrer mode 1vs1
 
     elif game_config["connexionmode"] == "multiplayer":
         if game_config["iphost"] != "None":
             start_host(
                 game_config["nbplayer"],
-                game_config["nbbot"],
                 game_config["iphost"],
             )
         elif game_config["iptarget"] != "None":
