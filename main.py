@@ -7,8 +7,8 @@ from system.server import GameServer
 from system.client import GameClient
 
 
-def start_local(nbplayer):
-    game_instance = game_entity.Game(nbplayer, 0, [0, 0, 0, 0])
+def start_local(nbplayer, bot=False):
+    game_instance = game_entity.Game(nbplayer, 1 if bot else 0, [0, 0, 0, 0])
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
 
@@ -37,6 +37,7 @@ def start_host(nbplayer, host_ip):
         "type": "game_start",
         "nbplayer": nbplayer,
         "current_player": game_instance.current_player,
+        "players_disks": game_instance.get_players_disks_state(),
     })
 
     game_ui.displayInterface()
@@ -78,8 +79,9 @@ def start_client(target_ip):
     print(f"Partie démarrée : {data['nbplayer']} joueur(s).")
 
     game_instance = game_entity.Game(data["nbplayer"], 0, [0, 0, 0, 0])
-    # On force le current_player pour etre synchronise avec l'hote
     game_instance.current_player = data["current_player"]
+    if "players_disks" in data:
+        game_instance.apply_players_disks_state(data["players_disks"])
 
     game_ui = ui.Interface(
         game_instance,
@@ -97,11 +99,11 @@ if __name__ == "__main__":
     print(game_config)
 
     if game_config["connexionmode"] == "local":
-        if game_config['nbplayer'] > 1:
-            start_local(game_config["nbplayer"])
-        else:
-            print("Lancement partie 1VS1 contre bot.")
-            # Intégrer mode 1vs1
+        if game_config["gamemode"] == "classic":
+            if game_config['nbplayer'] > 1:
+                start_local(game_config["nbplayer"], bot=False)
+        if game_config['nbplayer'] == 1 and game_config["gamemode"] == "solobot":
+            start_local(game_config["nbplayer"], bot=True)
 
     elif game_config["connexionmode"] == "multiplayer":
         if game_config["iphost"] != "None":

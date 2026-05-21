@@ -1,6 +1,7 @@
 # Librairie
-import random
 import tkinter as tk
+
+from entities import bot as bot_ai
 
 class Interface:
     def __init__(self, game, network=None, role="local", local_player_id=0):
@@ -16,6 +17,7 @@ class Interface:
         # GameServer (host), GameClient (client), ou None (local)
         self.network = network
         self.local_player_id = local_player_id
+        self._bot_after_id = None
 
         self.colors = {
             # Main
@@ -43,6 +45,8 @@ class Interface:
             'player3c' : '#EDC6D5',
             'player4' : '#EFA96E',
             'player4c' : '#EECBAE',
+            'bot' : '#72CFC4',
+            'botc' : '#B0DED9',
 
             # Boutons
             'red' : '#EF4F4F',
@@ -93,13 +97,27 @@ class Interface:
         self.frame_right.grid(row=0, column=2, sticky='nsew')
         
         self.update_ui()
-        
+
     def update_ui(self):
         print(f"Current phase : {self.game.phase}")
         print(f"Current sub phase : {self.game.sub_phase}")
-        print(self.game.boards.get_top().to_2d_grid())
         self.center()
         self.right()
+        self._schedule_bot_turn()
+
+    def _schedule_bot_turn(self) -> None:
+        if self.role != "local" or not self.game.is_bot():
+            return
+        if self._bot_after_id is not None:
+            self.root.after_cancel(self._bot_after_id)
+        self._bot_after_id = self.root.after(450, self._run_bot_turn)
+
+    def _run_bot_turn(self) -> None:
+        self._bot_after_id = None
+        if self.role != "local" or not self.game.is_bot():
+            return
+        if bot_ai.play_turn(self.game):
+            self.update_ui()
 
     def _redraw_center_pawns(self):
         if self._board_canvas is None:
@@ -251,20 +269,7 @@ class Interface:
                             {"type": "place_pawn", "row": row, "col": col}
                         )
                     elif self.game.phase == "mouvement":
-                        if self.game.sub_phase is None:
-                            self.game.sub_phase = "choix_disque"
-                        if self.game.sub_phase == "choix_disque":
-                            # On tire le disque cote client : un seul joueur
-                            # envoie a la fois, le broadcast garantit que
-                            # tout le monde recoit la meme valeur.
-                            selected_idx = self._pick_random_disk()
-                            self.network.send_action(
-                                {
-                                    "type": "choose_disk",
-                                    "disk_selected": selected_idx,
-                                }
-                            )
-                        elif self.game.sub_phase == "choix_pion":
+                        if self.game.sub_phase == "choix_pion":
                             self.network.send_action(
                                 {
                                     "type": "choose_pawn",
@@ -289,27 +294,23 @@ class Interface:
                 self.game.try_place_current_pawn(row, col)
                 action = {"type": "place_pawn", "row": row, "col": col}
             elif self.game.phase == "mouvement":
-                if self.game.sub_phase is None:
-                    self.game.sub_phase = "choix_disque"
-                if self.game.sub_phase == "choix_disque":
-                    selected_idx = self._pick_random_disk()
-                    self.game.try_choose_disk(selected_idx)
-                    action = {"type": "choose_disk", "disk_selected": selected_idx}
-                elif self.game.sub_phase == "choix_pion":
+                if self.game.sub_phase == "choix_pion":
                     self.game.try_choose_pawn(row, col)
                     action = {"type": "choose_pawn", "row": row, "col": col}
                 elif self.game.sub_phase == "deplacement":
-                    self.game.try_move_chosen_pawn_to(row, col)
-                    action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
-                
+                    if self.game.try_move_chosen_pawn_to(
+                        row, col, shuffle_disks=self._is_disk_shuffle_authority()
+                    ):
+                        action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
+                        self._send_disk_sync_if_needed()
 
-            # HOST : on previent les clients de ce qu'on vient de jouer
             if self.role == "host" and action is not None:
                 self.network.send_data(action)
 
             self.update_ui()
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
+
 
     # WIDGET PARTIE CENTRE
     def center(self):
@@ -378,17 +379,20 @@ class Interface:
                 highlightcolor=self.colors['border'],
                 bg=self.colors['white'],
             )
-            
-            test_data = [ # liste de liste a remplacer par la liste de mat
-                [1, True],
-                [2, False],
-                [2, True],
-                [3, False],
-                [3, True],
-                [4, True],
-]
 
-            self.draw_pions(canvas_pions, test_data, on_click=lambda idx: print(idx))
+            cur_player = self.game.players[self.game.current_player]
+            data = cur_player.disks.get_disks()
+
+            can_choose_disk = (
+                self.game.phase == "mouvement"
+                and self.game.sub_phase in (None, "choix_disque")
+                and (
+                    self.role == "local"
+                    or self.game.current_player == self.local_player_id
+                )
+            )
+            on_disk_click = self._on_disk_click if can_choose_disk else None
+            self.draw_pions(canvas_pions, data, on_click=on_disk_click)
 
 
             canvas_right.create_window(
@@ -397,7 +401,7 @@ class Interface:
                 window=canvas_pions,
                 width=size * 0.9,
                 height=size * 0.6,
-            )
+            )            
 
             
         canvas_right.bind('<Configure>', draw_right)
@@ -429,23 +433,30 @@ class Interface:
             
             coins.create_window(rayon,rayon,window=btn)  
             canvas.create_window(x,y,window = coins)  
-            
-        
-        
-        
-        
 
-    # TEMPORAIRE : pour le moment, on tire au hasard le disque a choisir.
-    # Tire au hasard l'indice d'un disque non encore utilise du joueur courant.
-    # Retourne None s'il n'y a plus de disque disponible.
-    def _pick_random_disk(self):
-        disks = self.game.players[self.game.current_player].disks.get_disks()
-        available = {idx: d for idx, d in enumerate(disks) if not d[1]}
-        if not available:
-            print("aucun disque disponible")
-            return None
-        return random.choice(list(available.keys()))
+    def _is_disk_shuffle_authority(self) -> bool:
+        """Seul l'hote (ou le local) melange les disques."""
+        return self.role in ("local", "host")
 
+    def _on_disk_click(self, idx: int) -> None:
+        if self.role == "client":
+            if self.game.current_player != self.local_player_id:
+                return
+            self.network.send_action(
+                {"type": "choose_disk", "disk_selected": idx}
+            )
+            return
+
+        if self.game.try_choose_disk(idx, self.update_ui):
+            if self.role == "host":
+                self.network.send_data(
+                    {"type": "choose_disk", "disk_selected": idx}
+                )
+
+    def _send_disk_sync_if_needed(self) -> None:
+        payload = self.game.consume_disk_sync()
+        if payload is not None and self.role == "host":
+            self.network.send_data({"type": "sync_disks", **payload})
 
     # RESEAU : appele depuis un thread d'ecoute, on bascule sur le thread Tkinter
     def on_network_message(self, msg):
@@ -462,13 +473,21 @@ class Interface:
                 (self.game.current_player + 1) % len(self.game.players)
             )
         elif action_type == "choose_disk":
-            self.game.try_choose_disk(msg["disk_selected"])
+            self.game.try_choose_disk(msg["disk_selected"], self.update_ui)
         elif action_type == "choose_pawn":
             self.game.try_choose_pawn(msg["row"], msg["col"])
         elif action_type == "move_chosen_pawn_to":
-            self.game.try_move_chosen_pawn_to(msg["row"], msg["col"])
+            if self.game.try_move_chosen_pawn_to(
+                msg["row"],
+                msg["col"],
+                shuffle_disks=self._is_disk_shuffle_authority(),
+            ):
+                self._send_disk_sync_if_needed()
+        elif action_type == "sync_disks":
+            player_id = msg["player_id"]
+            if 0 <= player_id < len(self.game.players):
+                self.game.players[player_id].disks.set_disks(msg["disks"])
         self.update_ui()
-
 
     # Affichage de l'interface du jeu
     def displayInterface(self):

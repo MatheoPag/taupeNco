@@ -10,13 +10,15 @@ class Game:
                 nb_bots: int, 
                 board_orientation: list[int]) -> None:
         self.board_size = 9
-        self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6}
+        self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
         self.colors = [
                 (0, "Surface"),
                 (1, "Terre arable"),
                 (2, "Sous-sol"),
                 (3, "Roche mère"),
             ]
+        self.nb_human_players = nb_players
+        self.nb_bots = nb_bots
         self.current_player = random.randint(0, nb_players + nb_bots - 1)
         players = (
             [
@@ -24,7 +26,7 @@ class Game:
                 for i in range(nb_players)
             ]
             + [
-                {"name": f"Bot {i+1}", "color": self.colors[i + nb_players]}
+                {"name": f"Bot", "color": self.colors[i + nb_players]}
                 for i in range(nb_bots)
             ]
         )
@@ -41,7 +43,32 @@ class Game:
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
-        self.legal_moves: list[tuple[int, int]] | None = None
+        self.legal_moves = None
+        self._pending_disk_sync = None
+
+        for p in self.players:
+            p.disks.mix_disks()
+
+    def is_bot(self, player_id: int | None = None) -> bool:
+        if player_id is None:
+            player_id = self.current_player
+        return player_id >= self.nb_human_players
+
+    def get_players_disks_state(self) -> list[list[list[int]]]:
+        """Etat des disques de chaque joueur (pour la synchro reseau)."""
+        return [p.disks.get_disks() for p in self.players]
+
+    def apply_players_disks_state(self, players_disks: list[list[list[int]]]) -> None:
+        """Applique l'etat des disques recu de l'hote."""
+        for player, disks in zip(self.players, players_disks):
+            player.disks.set_disks(disks)
+
+    def consume_disk_sync(self) -> dict | None:
+        """Retourne et efface la synchro disques en attente (apres mix hote)."""
+        payload = self._pending_disk_sync
+        self._pending_disk_sync = None
+        return payload
+
 
     def set_golden_shovel(self, shovel) -> None:
         """Remplace la golden shovel (utilise pour le chargement d'une save)."""
@@ -68,7 +95,7 @@ class Game:
         return False
 
     def is_legal_target_cell(self, row: int, col: int, phase: str) -> bool:
-        """Vérifie si (row, col) est une case cible valide selon la phase."""
+        """Verifie si (row, col) est une case cible valide selon la phase."""
         if phase not in ("placement", "mouvement"):
             return False
 
@@ -94,7 +121,7 @@ class Game:
                             col: int, 
                             phase: str) -> bool:
         """
-        Valide la case pour la phase donnée et déplace le pion. 
+        Valide la case pour la phase donnee et deplace le pion. 
         Pas de changement de joueur ni de phase.
         """
         if not self.is_legal_target_cell(row, col, phase):
@@ -106,7 +133,7 @@ class Game:
         """
         Placement : 
         - choix automatique du prochain pion du joueur courant,
-        - puis coup si légal.
+        - puis coup si legal.
         """
         if self.phase != "placement":
             return False
@@ -127,7 +154,7 @@ class Game:
             self.phase = "mouvement"
         return True
 
-    def try_choose_disk(self, disk_selected: int) -> bool:
+    def try_choose_disk(self, disk_selected: int, update_ui) -> bool:
         """Phase mouvement : choix du disque."""
         if self.phase != "mouvement":
             return False
@@ -136,11 +163,15 @@ class Game:
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
-            self.players[self.current_player].disk_selected = disk_selected
-            disk = self.players[self.current_player].disks.get_disks()[disk_selected]
+            cur_player = self.players[self.current_player] 
+            cur_player.disk_selected = disk_selected
+            disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
-            print(f"disque selectionné : {disk}")
+            print(f"disque selectionne : {disk}")
             self.sub_phase = "choix_pion"
+            update_ui()
+
+
             return True
         return False
 
@@ -162,7 +193,7 @@ class Game:
                         pawn_found = (pawn, idx)
                         break
             if not pawn_found:
-                print("Le pion sélectionné n'appartient pas au joueur courant.")
+                print("Le pion selectionne n'appartient pas au joueur courant.")
                 return False
             current_player.pawn_selected = pawn_found[1]
             self.legal_moves = self.possible_moves(
@@ -202,12 +233,14 @@ class Game:
                 continue
             cases_possibles.append((row, col))
         return cases_possibles
-   
 
-    def try_move_chosen_pawn_to(self, row: int, col: int) -> bool:
-        """Phase mouvement : déplace le pion désigné du joueur courant.
 
-        (passage de tour à ajouter plus tard).
+    def try_move_chosen_pawn_to(
+        self, row: int, col: int, shuffle_disks: bool = True
+    ) -> bool:
+        """Phase mouvement : deplace le pion designe du joueur courant.
+
+        shuffle_disks : False sur les clients (l'hote melange et diffuse).
         """
         if self.phase != "mouvement":
             return False
@@ -222,7 +255,7 @@ class Game:
                 cur.pawn_selected is None
                 or not (0 <= cur.pawn_selected < len(cur.pawns))
             ):
-                print("le pion selectionné n'est pas valide")
+                print("le pion selectionne n'est pas valide")
                 return False
             pawn = cur.pawns[cur.pawn_selected]
             if pawn.position is None:
@@ -230,7 +263,7 @@ class Game:
                 return False
 
             if cur.disk_selected is None:
-                print("le disque selectionné n'est pas valide")
+                print("le disque selectionne n'est pas valide")
                 return False
 
             if (row, col) not in self.possible_moves(
@@ -250,9 +283,18 @@ class Game:
                     self.current_player = (
                         (self.current_player + 1) % len(self.players)
                     )
+
+                if cur.disks.is_all_disk_visible():
+                    cur.disks.hide_all_disks()
+                    if shuffle_disks:
+                        cur.disks.mix_disks()
+                        self._pending_disk_sync = {
+                            "player_id": cur.id,
+                            "disks": cur.disks.get_disks(),
+                        }
                 return True
             print("le deplacement n'est pas valide car la case est \
-                occupée par un autre pion")
+                occupee par un autre pion")
         return False
 
 if __name__ == "__main__":
