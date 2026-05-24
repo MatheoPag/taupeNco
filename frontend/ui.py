@@ -87,7 +87,6 @@ class Interface:
         self.frame_left = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         self.frame_left.grid(row=0, column=0, sticky='nsew')
 
-
         ''' CENTRE : Plateau de jeu '''
         self.frame_center = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         self.frame_center.grid(row=0, column=1, sticky='nsew')
@@ -328,7 +327,6 @@ class Interface:
         )
         canvas_right.pack(fill='both', expand=True)
         player = self.game.players[self.game.current_player]
-
         name = player.name
         # label_round = tk.Label(
         #     self.frame_right,
@@ -351,6 +349,7 @@ class Interface:
             x1 = x0 + sizeW
             y1 = y0 + sizeH
 
+            ''' Cadre du menu '''
             canvas_right.create_rectangle(
                 x0,
                 x0,
@@ -361,6 +360,7 @@ class Interface:
                 width=2,
             )
 
+            ''' Cadre du statut / actions en cours de la partie '''
             canvas_right.create_rectangle(
                 x0,
                 y0,
@@ -371,6 +371,69 @@ class Interface:
                 width=2,
             )
 
+            # Titre (phase du jeu)
+            match self.game.phase :
+                case "placement":
+                    text_title_phase = "Les joueurs place leurs pions."
+                case "mouvement":
+                    text_title_phase = "Allez à la couche inférieure !"
+                case "victoire": 
+                    text_title_phase = f"Le joueur {"victoire d'un joueur"} a trouvé la pelle !" # À ajuster quand joueur victoire ok
+                case _: 
+                    text_title_phase = "⚠︎ Phase inconnue ⚠︎"
+            
+            label_title_phase = tk.Label(
+                self.frame_right,
+                text=text_title_phase,
+                font=('', 16, 'bold'),
+                bg=self.colors['background'],
+            )
+            label_title_phase.place(
+                relx=0.5,
+                y = y0 + sizeW*0.1,
+                width= sizeW * 0.9,
+                anchor='center'
+            )
+
+            # Action à réaliser (subphase)
+            if "joueur_rejoue" :
+                text_title_subphase = f"La taupe du joueur {player.id} est sur une case spéciale.\nIl peut rejouer un coup."
+                to_show = "replay"
+
+            match self.game.sub_phase :
+                case "choix_disque":
+                    text_title_subphase = f"Joueur {player.id} choisit un jeton."
+                    to_show = "disks"
+                case "choix_pion":
+                    text_title_subphase = f"Joueur {player.id} choisit une taupe à déplacer."
+                case "deplacement": 
+                    if "joueur_bloqué" :
+                        text_title_subphase = f"Joueur {player.id} ne peut déplacer aucune taupe.\nIl passe son tour."
+                        to_show = "blocked"
+                    elif "pions_dans_tout_trous" :
+                        text_title_subphase = f"Toutes les taupes du joueur {player.id} sont déjà dans un trou.\nIl a le droit passer son tour."
+                        to_show = "can_pass"
+                    else:
+                        text_title_subphase = f"Cette taupe se déplace de {player.disk_selected} maximum."
+                case None:
+                    text_title_subphase = "Debug : subphase = None" # debug (plus tard : faire en sorte que rien n'apparaissent)
+                case _: 
+                    text_title_subphase = "⚠︎ Subphase inconnue ⚠︎" 
+            
+            label_title_subphase = tk.Label(
+                self.frame_right,
+                text=text_title_subphase,
+                font=('', 14),
+                bg=self.colors['background'],
+            )
+            label_title_subphase.place(
+                relx=0.5,
+                y = y0 + 100,
+                width= sizeW * 0.9,
+                anchor='center'
+            )
+
+        canvas_right.bind('<Configure>', draw_right)
 
             # label_round.place(
             #     x=w / 2,
@@ -382,70 +445,68 @@ class Interface:
             # label_round.lift()
 
 
-            cx = w // 2 # NE PAS TOUCHER
-            cy = h // 2 + 10 # NE PAS TOUCHER (mat : je me suis permis de toucher)
+    #         cx = w // 2 # NE PAS TOUCHER
+    #         cy = h // 2 + 10 # NE PAS TOUCHER (mat : je me suis permis de toucher)
 
-            canvas_pions = tk.Canvas(
-                canvas_right,
-                highlightthickness=3,
-                highlightbackground=self.colors['border'],
-                highlightcolor=self.colors['border'],
-                bg=self.colors['white'],
-            )
+    #         canvas_pions = tk.Canvas(
+    #             canvas_right,
+    #             highlightthickness=3,
+    #             highlightbackground=self.colors['border'],
+    #             highlightcolor=self.colors['border'],
+    #             bg=self.colors['white'],
+    #         )
 
-            cur_player = self.game.players[self.game.current_player]
-            data = cur_player.disks.get_disks()
+    #         cur_player = self.game.players[self.game.current_player]
+    #         data = cur_player.disks.get_disks()
 
-            can_choose_disk = (
-                self.game.phase == "mouvement"
-                and self.game.sub_phase in (None, "choix_disque")
-                and (
-                    self.role == "local"
-                    or self.game.current_player == self.local_player_id
-                )
-            )
-            on_disk_click = self._on_disk_click if can_choose_disk else None
-            self.draw_pions(canvas_pions, data, on_click=on_disk_click)
+    #         can_choose_disk = (
+    #             self.game.phase == "mouvement"
+    #             and self.game.sub_phase in (None, "choix_disque")
+    #             and (
+    #                 self.role == "local"
+    #                 or self.game.current_player == self.local_player_id
+    #             )
+    #         )
+    #         on_disk_click = self._on_disk_click if can_choose_disk else None
+    #         self.draw_pions(canvas_pions, data, on_click=on_disk_click)
 
 
-            canvas_right.create_window(
-                cx,
-                cy+20,
-                window=canvas_pions,
-                width=sizeW * 0.9,
-                height=sizeH * 0.6,
-            )            
+    #         canvas_right.create_window(
+    #             cx,
+    #             cy+20,
+    #             window=canvas_pions,
+    #             width=sizeW * 0.9,
+    #             height=sizeH * 0.6,
+    #         )            
 
-            
-        canvas_right.bind('<Configure>', draw_right)
         
-    def draw_pions(self, canvas, data,on_click=None):
-        canvas.delete("all")
-        rayon = 18
-        espace_x = 45
-        espace_y = 40
+    # def draw_pions(self, canvas, data,on_click=None):
+    #     canvas.delete("all")
+    #     rayon = 18
+    #     espace_x = 45
+    #     espace_y = 40
 
-        for i, (valeur, visible) in enumerate(data):
-            colonons = i % 3
-            row = i // 3
-            x = 35 + colonons * espace_x # a peu pres centrer mais faudra modifier le 20
-            y =35 + row * espace_y
-            if visible:
-                texte = str(valeur)
-            else:
-                texte = "?"
+    #     for i, (valeur, visible) in enumerate(data):
+    #         colonons = i % 3
+    #         row = i // 3
+    #         x = 35 + colonons * espace_x # a peu pres centrer mais faudra modifier le 20
+    #         y =35 + row * espace_y
+    #         if visible:
+    #             texte = str(valeur)
+    #         else:
+    #             texte = "?"
                 
                 
-            coins = tk.Canvas(canvas, width=rayon*2, height=rayon*2,bg=self.colors['white'],highlightthickness=0)
+    #         coins = tk.Canvas(canvas, width=rayon*2, height=rayon*2,bg=self.colors['white'],highlightthickness=0)
         
-            coins.create_oval(0, 0, rayon*2, rayon*2,fill=self.colors['grey'], outline=self.colors['border'], width=1)
+    #         coins.create_oval(0, 0, rayon*2, rayon*2,fill=self.colors['grey'], outline=self.colors['border'], width=1)
 
-            btn = tk.Button(coins,text=texte,width=3,height=1,bg=self.colors['background'],relief='flat', bd=0,highlightthickness=0,
-                command=lambda idx=i: on_click(idx) if on_click else None, # cree une fonction avec idx i en parametre et on_click en resultat
-            )
+    #         btn = tk.Button(coins,text=texte,width=3,height=1,bg=self.colors['background'],relief='flat', bd=0,highlightthickness=0,
+    #             command=lambda idx=i: on_click(idx) if on_click else None, # cree une fonction avec idx i en parametre et on_click en resultat
+    #         )
             
-            coins.create_window(rayon,rayon,window=btn)  
-            canvas.create_window(x,y,window = coins)  
+    #         coins.create_window(rayon,rayon,window=btn)  
+    #         canvas.create_window(x,y,window = coins)  
 
     def _is_disk_shuffle_authority(self) -> bool:
         """Seul l'hote (ou le local) melange les disques."""
