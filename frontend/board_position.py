@@ -1,5 +1,6 @@
 # Librairie
 import tkinter as tk
+from PIL import Image, ImageTk
 
 class Boards:
     def __init__(self):
@@ -63,9 +64,13 @@ class Boards:
             'layer2' : 0,
             'layer3' : 0
         }
+        self.stock_canva = {}
+        self.stock_images = {}
 
         # Création des pages
         self._build_wigets()
+        
+
 
 
     def _build_wigets(self):
@@ -106,14 +111,17 @@ class Boards:
         # Couche 1
         frame_layer1 = tk.Frame(frame_layers, bg=self.colors['layer1c'])
         frame_layer1.grid(row=0, column=1, sticky='nsew')
+        self.hexa_board(frame_layer1, 1)
 
         # Couche 2
         frame_layer2 = tk.Frame(frame_layers, bg=self.colors['layer2c'])
         frame_layer2.grid(row=1, column=0, sticky='nsew')
+        self.hexa_board(frame_layer2, 2)
 
         # Couche 3
         frame_layer3 = tk.Frame(frame_layers, bg=self.colors['layer3c'])
         frame_layer3.grid(row=1, column=1, sticky='nsew')
+        self.hexa_board(frame_layer3, 3)
 
 
         ''' Bouton de validation '''
@@ -146,17 +154,60 @@ class Boards:
             2 : "frontend/ressources/pictures/hexa-test.png",
             3 : "frontend/ressources/pictures/hexa-test.png",
         }
+        
+        
+        self.layer_names = {
+            0: "Surface",
+            1: "Terre arable",
+            2: "Sous sol",
+            3: "Roche mère"
+        }
+        
 
-        w, h = 100, 100
+        w, h = 200, 200
+        img = Image.open(png[layer])
+        self.stock_images[layer] = img
 
-        image_board = tk.PhotoImage(file=png[layer]).zoom(1).subsample(10)
-        canvas_board = tk.Canvas(frame, width=w, height=h, bg=self.colors['layer1c'], bd=0, highlightthickness=0)
+        image_board = tk.PhotoImage(file=png[layer]).zoom(2).subsample(5)
+        canvas_board = tk.Canvas(frame, width=w, height=h, bg=frame['bg'], bd=0, highlightthickness=0)
         canvas_board.create_image(w/2, h/2, image=image_board)
         canvas_board.image = image_board
         canvas_board.pack(expand='YES')
+        label = tk.Label(frame,text=self.layer_names[layer],bg=frame['bg'],font=('', 14))
+        label.pack()
+        self.stock_canva[layer] = canvas_board
+        self.stock_images[layer] = img
+        
+        
+        frame_buttons = tk.Frame(frame, bg=frame['bg'])
+        frame_buttons.pack(pady=10)
+
+        
+        button_left = tk.Button(frame_buttons,text="↺",font=('', 20),bg=frame['bg'],bd=0,relief='flat',command=lambda: self.rotate(layer, -1))
+        button_left.pack(side='left', padx=10)
+
+        
+        button_right = tk.Button(frame_buttons,text="↻",font=('', 20),bg=frame['bg'],bd=0,relief='flat',command=lambda: self.rotate(layer, +1))
+        button_right.pack(side='left', padx=10)
 
 
-    
+    def rotate(self, layer, direction):
+        layer_name = f'layer{layer}'
+
+        self.position_config[layer_name] += direction
+        self.position_config[layer_name] = self.position_config[layer_name]%6
+        angle = self.position_config[layer_name] * 60
+
+        img = self.stock_images[layer]
+        rotated = img.rotate(angle).resize((200, 200))
+        photo = ImageTk.PhotoImage(rotated)
+
+        canvas = self.stock_canva[layer]
+        canvas.delete("all")
+        canvas.create_image(canvas.winfo_width() // 2,canvas.winfo_height() // 2, image=photo,anchor='center')
+        canvas.image = photo
+        
+        
     # Affichage des pages
     def display(self):
         self.root.mainloop()
