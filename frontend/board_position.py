@@ -90,13 +90,13 @@ class Boards:
             self.frame_main,
             text="Orientation des plateaux :",
             font=('', 20),
-            bg=self.colors['layer0'],
+            bg=self.frame_main['bg'],
         )
         label_title.grid(row=0, column=0, columnspan=2, sticky='nsew')
 
         ''' Plateau à orienter '''
         # Frame des couches
-        frame_layers = tk.Frame(self.frame_main, bg='red')
+        frame_layers = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         frame_layers.grid(row=1, column=0, sticky='nsew')
 
         for j in range(2):
@@ -104,29 +104,29 @@ class Boards:
             frame_layers.grid_columnconfigure(j, weight=1)
 
         # Couche 0
-        frame_layer0 = tk.Frame(frame_layers, bg=self.colors['layer0c'])
+        frame_layer0 = tk.Frame(frame_layers, bg=frame_layers['bg'])
         frame_layer0.grid(row=0, column=0, sticky='nsew')
         self.hexa_board(frame_layer0, 0)
 
         # Couche 1
-        frame_layer1 = tk.Frame(frame_layers, bg=self.colors['layer1c'])
+        frame_layer1 = tk.Frame(frame_layers, bg=frame_layers['bg'])
         frame_layer1.grid(row=0, column=1, sticky='nsew')
         self.hexa_board(frame_layer1, 1)
 
         # Couche 2
-        frame_layer2 = tk.Frame(frame_layers, bg=self.colors['layer2c'])
+        frame_layer2 = tk.Frame(frame_layers, bg=frame_layers['bg'])
         frame_layer2.grid(row=1, column=0, sticky='nsew')
         self.hexa_board(frame_layer2, 2)
 
         # Couche 3
-        frame_layer3 = tk.Frame(frame_layers, bg=self.colors['layer3c'])
+        frame_layer3 = tk.Frame(frame_layers, bg=frame_layers['bg'])
         frame_layer3.grid(row=1, column=1, sticky='nsew')
         self.hexa_board(frame_layer3, 3)
 
 
         ''' Bouton de validation '''
         # Création d'une frame pour dimensonner le bouton
-        frame_button = tk.Frame(self.frame_main, bg=self.colors['layer2'])
+        frame_button = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         frame_button.grid(row=2, column=0, sticky='nsew')
 
         for i in range(3):
@@ -196,7 +196,7 @@ class Boards:
 
         self.position_config[layer_name] += direction
         self.position_config[layer_name] = self.position_config[layer_name]%6
-        angle = self.position_config[layer_name] * 60
+        angle = -self.position_config[layer_name] * 60
 
         img = self.stock_images[layer]
         rotated = img.rotate(angle).resize((200, 200))
