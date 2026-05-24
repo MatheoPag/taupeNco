@@ -489,6 +489,7 @@ class Interface:
                 self.game.players[player_id].disks.set_disks(msg["disks"])
         self.update_ui()
 
+
     # Affichage de l'interface du jeu
     def displayInterface(self):
         self.root.mainloop()

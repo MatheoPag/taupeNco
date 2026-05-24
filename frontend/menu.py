@@ -64,6 +64,7 @@ class Menu:
         self.game_config = {
             'connexionmode' : None, # local OU multiplayer
             'gamemode' : None, # classic, solobot OU custom
+            'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
             'nbplayer' : tk.IntVar(value=2), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
@@ -367,6 +368,49 @@ class Menu:
         )
         button_classic.pack()
 
+        # Choix du nombre de plateaux en mode custom
+        label_gamemode_custom = tk.Label(
+            frame,
+            text="Nombre de plateaux\n(uniquement en personnalisé) : ",
+            font=('', 16),
+            bg=self.colors['background'],
+        )
+        label_gamemode_custom.pack()
+
+        frame_button_board = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
+        frame_button_board.pack(padx=20, pady=20)
+        frame_button_board.grid_rowconfigure(0, weight=1)
+        frame_button_board.grid_columnconfigure(3, weight=1)
+
+        button_board3 = tk.Radiobutton(
+            frame_button_board,
+            text="3",
+            variable=self.game_config['nbboard'],
+            value=3
+        )
+        button_board4 = tk.Radiobutton(
+            frame_button_board,
+            text="4",
+            variable=self.game_config['nbboard'],
+            value=4
+        )
+        button_board5 = tk.Radiobutton(
+            frame_button_board,
+            text="5",
+            variable=self.game_config['nbboard'],
+            value=5
+        )
+        button_board6 = tk.Radiobutton(
+            frame_button_board,
+            text="6",
+            variable=self.game_config['nbboard'],
+            value=6
+        )
+        button_board3.grid(row=0, column=0)
+        button_board4.grid(row=0, column=1)
+        button_board5.grid(row=0, column=2)
+        button_board6.grid(row=0, column=3)
+
         frame_button_custom = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
         frame_button_custom.pack(padx=20, pady=20)
         button_custom = tk.Button(
@@ -412,6 +456,7 @@ class Menu:
         # Renvoi la configuration de la partie (locale)
     def create_local_classic(self):
         self.game_config['gamemode'] = 'classic'
+        self.game_config['nbboard'] = 4
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
@@ -420,6 +465,7 @@ class Menu:
 
     def create_local_custom(self):
         self.game_config['gamemode'] = 'custom'
+        self.game_config['nbboard'] = self.game_config['nbboard'].get()
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
@@ -430,6 +476,7 @@ class Menu:
     def create_local_solo(self):
         self.game_config['connexionmode'] ='local'
         self.game_config['gamemode'] = 'solobot'
+        self.game_config['nbboard'] = 4
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = 1
