@@ -7,7 +7,7 @@ class Boards:
         # Palette de couleur
         self.colors = {
             # Main
-            'background' : '#D1D1D1',
+            'background' : '#EDECED',
             'border' : '#2C2E33',
             'white' : '#FFFFFF',
             'black' : '#000000',

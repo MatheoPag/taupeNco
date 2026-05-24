@@ -21,7 +21,7 @@ class Interface:
 
         self.colors = {
             # Main
-            'background' : '#D1D1D1',
+            'background' : '#EDECED',
             'border' : '#2C2E33',
             'white' : '#FFFFFF',
             'black' : '#000000',
@@ -84,16 +84,16 @@ class Interface:
 
 
         ''' GAUCHE : Infos sur le statut des joueurs '''
-        self.frame_left = tk.Frame(self.frame_main, bg="#A3E6AE")
+        self.frame_left = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         self.frame_left.grid(row=0, column=0, sticky='nsew')
 
 
         ''' CENTRE : Plateau de jeu '''
-        self.frame_center = tk.Frame(self.frame_main, bg="#A7EEEB")
+        self.frame_center = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         self.frame_center.grid(row=0, column=1, sticky='nsew')
 
         ''' DROITE : Infos sur la partie en cours '''
-        self.frame_right = tk.Frame(self.frame_main, bg="#A3C9E6")
+        self.frame_right = tk.Frame(self.frame_main, bg=self.frame_main['bg'])
         self.frame_right.grid(row=0, column=2, sticky='nsew')
         
         self.update_ui()
@@ -324,49 +324,62 @@ class Interface:
             w.destroy()
 
         canvas_right = tk.Canvas(
-            self.frame_right, highlightthickness=0, width=0, height=0
+            self.frame_right, bg=self.frame_right['bg'], highlightthickness=0, width=0, height=0
         )
         canvas_right.pack(fill='both', expand=True)
         player = self.game.players[self.game.current_player]
 
         name = player.name
-        label_round = tk.Label(
-            self.frame_right,
-            text=f"Au tour de {name}",
-            bg=self.colors['white'],
-            fg=self.colors['black'],
-            anchor="n",
-        )
+        # label_round = tk.Label(
+        #     self.frame_right,
+        #     text=f"Au tour de {name}",
+        #     bg=self.colors['white'],
+        #     fg=self.colors['black'],
+        #     anchor="n",
+        # )
 
         def draw_right(event):
-            
             canvas_right.delete('all')
             w = event.width 
             h = event.height
             
-            size = min(w, h) * 0.7
-            x0 = (w - size) / 2
-            y0 = (h - size) / 2
-            x1 = x0 + size
-            y1 = y0 + size
+            sizeW = w * 0.9
+            sizeH = h * 0.5
+
+            x0 = (w - sizeW) / 2
+            y0 = 70
+            x1 = x0 + sizeW
+            y1 = y0 + sizeH
+
+            canvas_right.create_rectangle(
+                x0,
+                x0,
+                x1,
+                70 - x0,
+                fill=self.colors['background'],
+                outline=self.colors['border'],
+                width=2,
+            )
 
             canvas_right.create_rectangle(
                 x0,
                 y0,
                 x1,
                 y1,
-                fill=self.colors['white'],
+                fill=self.colors['background'],
                 outline=self.colors['border'],
-                width=3,
+                width=2,
             )
-            label_round.place(
-                x=w / 2,
-                y=h / 2 - 40,
-                anchor='center',
-                width=size * 0.8,
-                height=size * 0.35,
-            )
-            label_round.lift()
+
+
+            # label_round.place(
+            #     x=w / 2,
+            #     y=h / 2 - 40,
+            #     anchor='n',
+            #     width=sizeW * 0.8,
+            #     height=sizeH * 0.35,
+            # )
+            # label_round.lift()
 
 
             cx = w // 2 # NE PAS TOUCHER
@@ -399,8 +412,8 @@ class Interface:
                 cx,
                 cy+20,
                 window=canvas_pions,
-                width=size * 0.9,
-                height=size * 0.6,
+                width=sizeW * 0.9,
+                height=sizeH * 0.6,
             )            
 
             
