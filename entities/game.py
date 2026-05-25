@@ -152,6 +152,7 @@ class Game:
 
         if self.check_placement(self.players):
             self.phase = "mouvement"
+            self.sub_phase = "choix_disque" # modifié par Tristan
         return True
 
     def try_choose_disk(self, disk_selected: int, update_ui) -> bool:
