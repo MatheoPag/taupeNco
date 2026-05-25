@@ -1,6 +1,7 @@
 # Librairie
 import tkinter as tk
 from PIL import Image, ImageTk
+import os
 
 class Boards:
     def __init__(self):
@@ -148,13 +149,17 @@ class Boards:
 
     # Gestion de l'orientation d'un plateau
     def hexa_board(self, frame, layer):
+        # Permet de retrouver l'image, peu importe le cwd (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
+        cwd = os.path.dirname(__file__)
+        png_path = os.path.join(cwd, "ressources/pictures/hexa-test.png")
+        # print(f"\n{png_path}\n") # debug
+
         png = { # Change la couleur du png en fonction de la couche
-            0 : "frontend/ressources/pictures/hexa-test.png",
-            1 : "frontend/ressources/pictures/hexa-test.png",
-            2 : "frontend/ressources/pictures/hexa-test.png",
-            3 : "frontend/ressources/pictures/hexa-test.png"
+            0 : png_path,
+            1 : png_path,
+            2 : png_path,
+            3 : png_path
         }
-        
         
         self.layer_names = {
             0: "Surface",
@@ -162,7 +167,6 @@ class Boards:
             2: "Sous sol",
             3: "Roche mère"
         }
-        
 
         w, h = 200, 200
         img = Image.open(png[layer])
