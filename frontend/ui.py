@@ -135,7 +135,7 @@ class Interface:
                 fill = self.colors[player.name.lower().replace(" ", "")]
                 self._board_canvas.create_oval(
                     x - r_node, y - r_node, x + r_node, y + r_node,
-                    fill=fill, outline='', tags='pawns',
+                    fill=fill, outline=self.colors['border'], tags='pawns',
                 )
 
     def _setup_center_board(self):
@@ -419,6 +419,7 @@ class Interface:
 
                     case "choix_pion":
                         text_title_subphase = f"Joueur {pnb} choisit une taupe à déplacer."
+                        to_show = "move"
 
                     case "deplacement": 
                         if joueur_bloque() : # à adapter
@@ -442,7 +443,7 @@ class Interface:
                 text=text_title_subphase,
                 font=('', 14),
                 bg=self.colors['background'],
-                wraplength = sizeW * 0.8,
+                wraplength = sizeW * 0.9,
                 justify='left'
             )
             label_title_subphase.place(
@@ -459,22 +460,25 @@ class Interface:
                     draw_disks(canvas_right, pnb, sizeW, sizeH)
 
                 # Bouton suivant
-                case "replay" :
-                    print
                 case "blocked" :
-                    print
+                    next_button(canvas_right, "Suivant", "",  "e")
 
                 # Affiche le jeton de déplacement
                 case "move" :
-                    print
+                    show_current_disk(canvas_right)
 
-                # Joueur choisit si rejoue ou pas
+                # Joueur choisit si (re)joue ou pas
+                case "replay" :
+                    next_button(canvas_right, "Rejouer", "",  "w")
+                    next_button(canvas_right, "Passer", False,  "e")
+
                 case "can_pass" :
-                    print
+                    next_button(canvas_right, "Jouer", "",  "w")
+                    next_button(canvas_right, "Passer", "",  "e")
 
                 # Victoire d'un joueur
                 case "victory":
-                    print
+                    victory_player(canvas_right)
 
                 # Autres
                 case None :
@@ -484,6 +488,7 @@ class Interface:
 
         canvas_right.bind('<Configure>', draw_right)
 
+        ''' Fonctions 'to_show' '''
         def draw_disks(parent, pnb, w, h):
             # Récupération des données sur les disques du joueur
             pcolor = f"player{pnb}"
@@ -502,7 +507,6 @@ class Interface:
             on_click = self._on_disk_click if can_choose_disk else None
 
             # Affichage des disques
-            print(w, h)
             diametre = 60
             espace_x, espace_y = 85, 90
 
@@ -510,16 +514,16 @@ class Interface:
             for i, (valeur, visible) in enumerate(data):
                 column = i % 3
                 row = i // 3
-                x = w/2 + espace_x * (column-1)
-                y = h/2 + espace_y * row
-                print(x, y)
+                x = w/4 + espace_x * column
+                y = h/1.5 + espace_y * row
 
                 # Rend visible un jeton déjà selectionné
                 if visible:
                     texte = str(valeur)
+                    todo = ''
                 else:
                     texte = "?"
-                    
+                    todo = lambda idx=i: on_click(idx) if on_click else None # cree une fonction avec idx i en parametre et on_click en resultat
                     
                 coins = tk.Canvas(parent, width=diametre, height=diametre,bg=parent['bg'], bd=0, highlightthickness=0)
             
@@ -541,9 +545,9 @@ class Interface:
                     relief='flat', 
                     bd=0,
                     highlightthickness=0,
-                    command=lambda idx=i: on_click(idx) if on_click else None, # cree une fonction avec idx i en parametre et on_click en resultat
+                    command=todo 
                 )
-                
+            
                 coins.create_window(
                     diametre/2,
                     diametre/2,
@@ -554,6 +558,63 @@ class Interface:
                     y,
                     window = coins
                 )  
+
+        def show_current_disk(parent):
+            pcolor = f"player{pnb}"
+            current_disk = f"{player.disks.get_disks()[player.disk_selected][0]}"
+            diameter = 85
+            x = 91
+            y = 350
+
+            parent.create_oval(
+                x, # 91
+                y, # 350
+                x + diameter, # 191
+                y + diameter, # 450
+                fill = self.colors[pcolor],
+                width = 1
+            )
+
+            parent.create_text(
+                (diameter)/2 + x, 
+                (diameter)/2 + y,
+                text = current_disk,
+                font = ("", 20)
+            )
+
+        def next_button(parent, text, command, position,): 
+        # parent, texte à afficher dans le bouton, action à effectuer via le bouton, position gauche ('w') ou droite ('e') dans le canvas
+            match position:
+                case 'w':
+                    x = 0.3
+                    color = self.colors['green']
+                case 'e':
+                    x = 0.6
+                    color = self.colors['grey']
+
+            button_next = tk.Button(
+                parent, 
+                text=text,
+                width=4,
+                height=2,
+                bg=color,
+                relief='flat',
+                bd=1,
+                command=command # Passe à la subphase suivante
+                )
+            
+            button_next.pack()
+            button_next.place(
+                relx=x,
+                rely=0.5
+            )
+
+        def victory_player(parent):
+            print("Logo de la taupe gagnante")
+
+
+        #def victory_popup():
+
 
     def _is_disk_shuffle_authority(self) -> bool:
         """Seul l'hote (ou le local) melange les disques."""

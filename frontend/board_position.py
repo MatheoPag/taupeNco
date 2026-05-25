@@ -152,7 +152,7 @@ class Boards:
             0 : "frontend/ressources/pictures/hexa-test.png",
             1 : "frontend/ressources/pictures/hexa-test.png",
             2 : "frontend/ressources/pictures/hexa-test.png",
-            3 : "frontend/ressources/pictures/hexa-test.png",
+            3 : "frontend/ressources/pictures/hexa-test.png"
         }
         
         
