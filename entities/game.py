@@ -297,13 +297,3 @@ class Game:
             print("le deplacement n'est pas valide car la case est \
                 occupee par un autre pion")
         return False
-
-if __name__ == "__main__":
-    game = Game(
-            [
-                {"name": "John", "color": "green"}, 
-                {"name": "Jane", "color": "red"}, 
-                {"name": "Jim", "color": "yellow"}, 
-                {"name": "Jill", "color": "blue"}
-            ]
-        )

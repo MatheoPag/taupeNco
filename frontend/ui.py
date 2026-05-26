@@ -253,7 +253,6 @@ class Interface:
             if coords is None:
                 return
             row, col, _ = coords
-            clicked_current_player_pawn = self._is_current_player_pawn(row, col)
 
             # MULTIJOUEUR
             if self.role != "local":
@@ -269,13 +268,7 @@ class Interface:
                             {"type": "place_pawn", "row": row, "col": col}
                         )
                     elif self.game.phase == "mouvement":
-                        if (
-                            self.game.sub_phase == "choix_pion"
-                            or (
-                                self.game.sub_phase == "deplacement"
-                                and clicked_current_player_pawn
-                            )
-                        ):
+                        if self.game.sub_phase == "choix_pion":
                             self.network.send_action(
                                 {
                                     "type": "choose_pawn",
@@ -304,11 +297,7 @@ class Interface:
                     self.game.try_choose_pawn(row, col)
                     action = {"type": "choose_pawn", "row": row, "col": col}
                 elif self.game.sub_phase == "deplacement":
-                    if clicked_current_player_pawn and self.game.try_choose_pawn(
-                        row, col
-                    ):
-                        action = {"type": "choose_pawn", "row": row, "col": col}
-                    elif self.game.try_move_chosen_pawn_to(
+                    if self.game.try_move_chosen_pawn_to(
                         row, col, shuffle_disks=self._is_disk_shuffle_authority()
                     ):
                         action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
@@ -631,13 +620,6 @@ class Interface:
         """Seul l'hote (ou le local) melange les disques."""
         return self.role in ("local", "host")
 
-    def _is_current_player_pawn(self, row: int, col: int) -> bool:
-        current_player = self.game.players[self.game.current_player]
-        for pawn in current_player.pawns:
-            if pawn.position == (row, col):
-                return True
-        return False
-
     def _on_disk_click(self, idx: int) -> None:
         if self.role == "client":
             if self.game.current_player != self.local_player_id:
@@ -695,6 +677,3 @@ class Interface:
         self.root.mainloop()
 
 
-if __name__=="__main__":
-    ui = Interface()
-    ui.displayInterface()
