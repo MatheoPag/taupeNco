@@ -66,6 +66,8 @@ class Interface:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
         self.root.config(bg = self.colors['background'])
+        self._center_pad_x = 10
+        self._center_pad_y = 10
 
         # Création des widgets
         self._build_widgets()
@@ -129,8 +131,8 @@ class Interface:
             for pawn in player.pawns:
                 if pawn.position is None:
                     continue
-                x = pad + pawn.position[1] * STEP_X
-                y = pad + pawn.position[0] * STEP_Y
+                x = self._center_pad_x + pawn.position[1] * STEP_X
+                y = self._center_pad_y + pawn.position[0] * STEP_Y
                 r_node = 10
                 fill = self.colors[player.name.lower().replace(" ", "")]
                 self._board_canvas.create_oval(
@@ -139,13 +141,16 @@ class Interface:
                 )
 
     def _setup_center_board(self):
+        current_color_int = self.game.boards.get_top().color_int
+        color = f"layer{current_color_int}"
         canvas_circle = tk.Canvas(
             self.frame_center,
-            bg=self.colors['background'],
+            bg=self.colors["background"],
             highlightthickness=0,
         )
         self._canvas_circle = canvas_circle
         canvas_circle.pack(fill='both', expand=True)
+        self._current_board_color = color
 
         def draw(event):
             self._canvas_circle.delete('all')
@@ -155,16 +160,97 @@ class Interface:
             cx = w // 2 # NE PAS TOUCHER
             cy = h // 2 - 70 # NE PAS TOUCHER
             r = min(w, h) // 2.5  # NE PAS TOUCHER
+            STEP_X = int(r * 1.8 / (self._center_columns - 1))
+            STEP_Y = int(r * 0.9 / (self._center_rows - 1))
+            self._center_STEP_X = STEP_X
+            self._center_STEP_Y = STEP_Y
+            self._center_pad_x = cx - ((self._center_columns - 1) * STEP_X) // 2
+            self._center_pad_y = cy - ((self._center_rows - 1) * STEP_Y) // 2
             self._canvas_circle.create_oval(
                 cx - r,
                 cy - r,
                 cx + r,
                 cy + r,
+                fill=self.colors[self._current_board_color],
                 outline=self.colors['border'],
                 width=1,
             )
+            
+            grid = self.game.boards.get_top().to_2d_grid()
+            for row in grid:
+                print(row)
+            # 1ère couche : plateau (cases existantes)
+            for r in range(rows):
+                for c in range(columns):
+                    if grid[r][c] is not None:
+                        x = self._center_pad_x + c * STEP_X
+                        y = self._center_pad_y + r * STEP_Y
 
-        canvas_circle.bind('<Configure>', draw)
+                        match grid[r][c]:
+                            case 0:
+                                r_node, size = 5, self.colors['layer0']
+                                self._board_canvas.create_oval(
+                                    x - r_node,
+                                    y - r_node,
+                                    x + r_node,
+                                    y + r_node,
+                                    fill=size,
+                                    outline='',
+                                )
+            # 2ème couche : plateau (trous, cases spéciales)
+            for r in range(rows):
+                for c in range(columns):
+                    if grid[r][c] is not None:
+                        x = self._center_pad_x + c * STEP_X
+                        y = self._center_pad_y + r * STEP_Y
+
+                        match grid[r][c]:
+                            case "X":
+                                r_node, size = 20, self.colors['layer1']
+                                self._board_canvas.create_oval(
+                                    x - r_node,
+                                    y - r_node,
+                                    x + r_node,
+                                    y + r_node,
+                                    fill=size,
+                                    outline='',
+                                )
+                            case "S":
+                                r_node, size = 13, self.colors['layer0']
+                                self._board_canvas.create_oval(
+                                    x - r_node,
+                                    y - r_node,
+                                    x + r_node,
+                                    y + r_node,
+                                    fill=size,
+                                    outline='',
+                                )
+                                
+                                
+            for i in range(rows):
+                for j in range(columns):
+                    if grid[i][j] is None:
+                        continue
+                    x = self._center_pad_x + j * STEP_X
+                    y = self._center_pad_y + i * STEP_Y
+                    
+                    if j + 2 < columns and grid[i][j + 2] is not None:
+                        x2 = self._center_pad_x + (j + 2) * STEP_X
+                        y2 = self._center_pad_y + i * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#addapter la couleur en fonction du plateau
+                        
+                    if i + 1 < rows and j - 1 >= 0 and grid[i + 1][j - 1] is not None:
+                        x2 = self._center_pad_x + (j - 1) * STEP_X
+                        y2 = self._center_pad_y + (i + 1) * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#pareil
+    
+                    if i + 1 < rows and j + 1 < columns and grid[i + 1][j + 1] is not None:
+                        x2 = self._center_pad_x + (j + 1) * STEP_X
+                        y2 = self._center_pad_y + (i + 1) * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#pareil
+                    
+
+        
 
         self._center_rows = 9
         self._center_columns = 17
@@ -179,66 +265,17 @@ class Interface:
         canvas_w = (columns - 1) * STEP_X + 2 * pad
         canvas_h = (rows - 1) * STEP_Y + 2 * pad
 
-        self._board_canvas = tk.Canvas(
-            canvas_circle, width=canvas_w, height=canvas_h,
-            bg=self.colors['background'], highlightthickness=0,
-        )
-        self._board_canvas.place(relx=0.5, rely=0.5, anchor='center')
+        self._board_canvas = canvas_circle
 
-        grid = self.game.boards.get_top().to_2d_grid()
-
-        # 1ère couche : plateau (cases existantes)
-        for r in range(rows):
-            for c in range(columns):
-                if grid[r][c] is not None:
-                    x = pad + c * STEP_X
-                    y = pad + r * STEP_Y
-
-                    match grid[r][c]:
-                        case 0:
-                            r_node, size = 5, self.colors['layer0']
-                            self._board_canvas.create_oval(
-                                x - r_node,
-                                y - r_node,
-                                x + r_node,
-                                y + r_node,
-                                fill=size,
-                                outline='',
-                            )
-        # 2ème couche : plateau (trous, cases spéciales)
-        for r in range(rows):
-            for c in range(columns):
-                if grid[r][c] is not None:
-                    x = pad + c * STEP_X
-                    y = pad + r * STEP_Y
-
-                    match grid[r][c]:
-                        case "X":
-                            r_node, size = 20, self.colors['layer1']
-                            self._board_canvas.create_oval(
-                                x - r_node,
-                                y - r_node,
-                                x + r_node,
-                                y + r_node,
-                                fill=size,
-                                outline='',
-                            )
-                        case "S":
-                            r_node, size = 13, self.colors['layer0']
-                            self._board_canvas.create_oval(
-                                x - r_node,
-                                y - r_node,
-                                x + r_node,
-                                y + r_node,
-                                fill=size,
-                                outline='',
-                            )
-
+        
+        canvas_circle.bind('<Configure>', draw)
+        
         def get_click_coordinate(event):
             # Les coordonnées sont déjà relatives à canvas (la grille)
             grid_live = self.game.boards.get_top().to_2d_grid()
-            c = round((event.x - pad) / STEP_X)
-            r = round((event.y - pad) / STEP_Y)
+            c = round((event.x - self._center_pad_x) / self._center_STEP_X)
+            r = round((event.y - self._center_pad_y) / self._center_STEP_Y)
+            
 
             if not (0 <= r < rows and 0 <= c < columns):
                 return None
