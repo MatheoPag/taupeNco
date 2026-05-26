@@ -205,6 +205,16 @@ class Game:
 
         return False
 
+    def is_player_blocked(self) -> bool:
+        cur = self.players[self.current_player]
+        pawn_blocked = 0
+        for i in range(len(cur.pawns)):
+            if len(self.possible_moves(i, cur.disk_selected)) == 0:
+                pawn_blocked += 1
+        if pawn_blocked == len(cur.pawns):
+            return True 
+
+
     def possible_moves(self, pawn_index, disk_index: int) -> list[tuple[int, int]]:
         pawn = self.players[self.current_player].pawns[pawn_index]
         n = self.players[self.current_player].disks.get_disks()[disk_index][0]

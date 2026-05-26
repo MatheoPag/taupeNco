@@ -372,7 +372,8 @@ class Interface:
 
             ''' Debug '''
             def joueur_bloque():
-                return False
+                
+                return #fonction
             def joueur_rejoue():
                 return False
             def pions_dans_tout_trous():
@@ -408,10 +409,8 @@ class Interface:
 
             # Action à réaliser (subphase)
             if self.game.phase != "placement": 
-                if joueur_rejoue() : # à adapter
-                    text_title_subphase = f"La taupe du joueur {pnb} est sur une case spéciale.\nIl peut rejouer un coup."
-                    to_show = "replay"
-
+                        
+                print(self.game.sub_phase)
                 match self.game.sub_phase :
                     case "choix_disque":
                         text_title_subphase = f"Joueur {pnb} choisit un jeton :"
@@ -420,23 +419,27 @@ class Interface:
                     case "choix_pion":
                         text_title_subphase = f"Joueur {pnb} choisit une taupe à déplacer."
                         to_show = "move"
-
-                    case "deplacement": 
-                        if joueur_bloque() : # à adapter
+                        if self.game.is_player_blocked() :
                             text_title_subphase = f"Joueur {pnb} ne peut déplacer aucune taupe.\nIl passe son tour."
                             to_show = "blocked"
-                        elif pions_dans_tout_trous() : # à adapter
-                            text_title_subphase = f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\nIl a le droit passer son tour."
-                            to_show = "can_pass"
-                        else:
-                            text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
-                            to_show = "move"
+
+                    case "deplacement": 
+                        text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
+                        to_show = "move"
 
                     case None:
                         text_title_subphase = "Debug : subphase = None" # debug (plus tard : faire en sorte que rien n'apparaissent)
 
                     case _: 
                         text_title_subphase = "⚠︎ Subphase inconnue ⚠︎" 
+
+                    #     case joueur_rejoue() : # à adapter
+                    #     text_title_subphase = f"La taupe du joueur {pnb} est sur une case spéciale.\nIl peut rejouer un coup."
+                    #     to_show = "replay"
+
+                    # case pions_dans_tout_trous() : # à adapter
+                    #     text_title_subphase = f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\nIl a le droit passer son tour."
+                    #     to_show = "can_pass"
             
             label_title_subphase = tk.Label(
                 self.frame_right,
@@ -457,6 +460,7 @@ class Interface:
             match to_show:
                 # Choix du disque 
                 case "disks" :
+                    # 
                     draw_disks(canvas_right, pnb, sizeW, sizeH)
 
                 # Bouton suivant

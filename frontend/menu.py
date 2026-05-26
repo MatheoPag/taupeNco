@@ -65,7 +65,7 @@ class Menu:
             'connexionmode' : None, # local OU multiplayer
             'gamemode' : None, # classic, solobot OU custom
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
-            'nbplayer' : tk.IntVar(value=2), # 2, 3 ou 4
+            'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
