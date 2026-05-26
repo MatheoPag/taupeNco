@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 import pygame
 from system.server import get_local_ip
+from frontend.board_position import Boards
 
 class Menu:
     def __init__(self):
@@ -67,8 +68,12 @@ class Menu:
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
             'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
-            'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
+            'iptarget' : tk.StringVar(), # Adresse IP pour rejoindre l'host
+            'board_orientation' : [0, 0, 0, 0],
         }
+        self._pending_gamemode = None
+        self._pending_nbboard = None
+        self._board_position_return_frame = None
 
         # Lancement de la musique du menu
         #self.play_music()
@@ -186,7 +191,7 @@ class Menu:
 
         # FENÊTRE DU CHOIX DU MODE DE JEU (local)
         (
-            frame_local_mode,
+            self.frame_local_mode,
             button_classic,
             button_custom,
             button_back1,
@@ -194,11 +199,37 @@ class Menu:
 
         # FENÊTRE DU CHOIX DU MODE DE JEU (multijoueur — hôte)
         (
-            frame_multiplayer_game_mode,
+            self.frame_multiplayer_game_mode,
             button_multi_classic,
             button_multi_custom,
             button_back_multi_config,
         ) = self._build_game_mode_page("Multijoueur en ligne")
+
+        # FENÊTRE ORIENTATION DES PLATEAUX
+        self.frame_board_position = tk.Frame(self.root, bg=self.colors['background'])
+        self.frame_board_position.grid(row=0, column=0, sticky='nsew')
+        self.frame_board_position.grid_rowconfigure(0, weight=1)
+        self.frame_board_position.grid_columnconfigure(0, weight=1)
+
+        Boards(
+            parent=self.frame_board_position,
+            on_finish=self._finish_board_position,
+        )
+
+        frame_button_back_board = tk.Frame(
+            self.frame_board_position, bg=self.colors['border'], padx=2, pady=2
+        )
+        frame_button_back_board.grid(row=1, column=0, sticky='ew', padx=20, pady=10)
+        button_back_board = tk.Button(
+            frame_button_back_board,
+            text="Retour",
+            font=('', 16),
+            bg=self.colors['layer0'],
+            bd=0,
+            relief='flat',
+            command=self._leave_board_position,
+        )
+        button_back_board.pack()
         
         # FENÊTRE MULTIJOUEUR
         frame_multiplayer_mode = tk.Frame(self.root, bg=self.colors['background'])
@@ -281,7 +312,7 @@ class Menu:
         frame_connexion_mode.tkraise()
 
             # Boutons de la page d'accueil
-        button_local.config(command=lambda : self.set_connexion_local(frame_local_mode))
+        button_local.config(command=lambda : self.set_connexion_local(self.frame_local_mode))
         button_online.config(
             command=lambda : self.set_connexion_multiplayer(frame_multiplayer_mode)
         )
@@ -452,31 +483,55 @@ class Menu:
         self.game_config['connexionmode']='None'
 
 
+    def _show_board_position(self, return_frame, gamemode, nbboard):
+        """Affiche la page d'orientation des plateaux avant de lancer la partie."""
+        self._board_position_return_frame = return_frame
+        self._pending_gamemode = gamemode
+        self._pending_nbboard = nbboard
+        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
+        self.root.geometry("800x800")
+        self.root.minsize(800, 800)
+        self.root.maxsize(800, 800)
+        self.frame_board_position.tkraise()
+
+    def _leave_board_position(self):
+        self.root.geometry("360x480")
+        self.root.minsize(360, 480)
+        self.root.maxsize(360, 480)
+        if self._board_position_return_frame is not None:
+            self._board_position_return_frame.tkraise()
+
+    def _finish_board_position(self, orientations):
+        self.game_config['board_orientation'] = orientations
+        self.game_config['gamemode'] = self._pending_gamemode
+        self.game_config['nbboard'] = self._pending_nbboard
+        if self.game_config['connexionmode'] == 'multiplayer':
+            self.game_config['iphost'] = get_local_ip()
+            self.game_config['iptarget'] = 'None'
+        else:
+            self.game_config['iphost'] = 'None'
+            self.game_config['iptarget'] = 'None'
+        self.root.destroy()
+
+
     # CONFIG LOCAL 
         # Renvoi la configuration de la partie (locale)
     def create_local_classic(self):
-        self.game_config['gamemode'] = 'classic'
-        self.game_config['nbboard'] = 4
-        self.game_config['iphost'] = 'None'
-        self.game_config['iptarget'] = 'None'
-        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-
-        self.root.destroy()
+        self._show_board_position(self.frame_local_mode, 'classic', 4)
 
     def create_local_custom(self):
-        self.game_config['gamemode'] = 'custom'
-        self.game_config['nbboard'] = self.game_config['nbboard'].get()
-        self.game_config['iphost'] = 'None'
-        self.game_config['iptarget'] = 'None'
-        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-
-        self.root.destroy()
+        self._show_board_position(
+            self.frame_local_mode,
+            'custom',
+            self.game_config['nbboard'].get(),
+        )
 
         # Mode solo
     def create_local_solo(self):
         self.game_config['connexionmode'] ='local'
         self.game_config['gamemode'] = 'solobot'
         self.game_config['nbboard'] = 4
+        self.game_config['board_orientation'] = [0, 0, 0, 0]
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = 1
@@ -485,18 +540,15 @@ class Menu:
 
 
     # CONFIG MULTIJOUEUR (hôte)
-    def _finalize_multiplayer_host(self, gamemode):
-        self.game_config['gamemode'] = gamemode
-        self.game_config['iphost'] = get_local_ip()
-        self.game_config['iptarget'] = 'None'
-        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
-        self.root.destroy()
-
     def create_multiplayer_classic(self):
-        self._finalize_multiplayer_host('classic')
+        self._show_board_position(self.frame_multiplayer_game_mode, 'classic', 4)
 
     def create_multiplayer_custom(self):
-        self._finalize_multiplayer_host('custom')
+        self._show_board_position(
+            self.frame_multiplayer_game_mode,
+            'custom',
+            self.game_config['nbboard'].get(),
+        )
 
 
     # CONFIG ONLINE

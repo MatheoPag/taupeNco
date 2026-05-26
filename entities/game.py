@@ -40,7 +40,6 @@ class Game:
                 self.pawns_per_player[len(players)]
             ) for i in range(len(players))]
         self.boards = board.BoardPile(self.colors, self.board_size, board_orientation)
-        self.boards.pop_top()
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
