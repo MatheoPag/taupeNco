@@ -279,7 +279,11 @@ class Interface:
                         elif self.game.sub_phase == "deplacement":
                             self.network.send_action(
                                 {
-                                    "type": "move_chosen_pawn_to",
+                                    "type": (
+                                        "choose_pawn"
+                                        if self._cell_contains_current_player_pawn(row, col)
+                                        else "move_chosen_pawn_to"
+                                    ),
                                     "row": row,
                                     "col": col,
                                 }
@@ -297,7 +301,9 @@ class Interface:
                     self.game.try_choose_pawn(row, col)
                     action = {"type": "choose_pawn", "row": row, "col": col}
                 elif self.game.sub_phase == "deplacement":
-                    if self.game.try_move_chosen_pawn_to(
+                    if self.game.try_choose_pawn(row, col):
+                        action = {"type": "choose_pawn", "row": row, "col": col}
+                    elif self.game.try_move_chosen_pawn_to(
                         row, col, shuffle_disks=self._is_disk_shuffle_authority()
                     ):
                         action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
@@ -624,6 +630,10 @@ class Interface:
         """Seul l'hote (ou le local) melange les disques."""
         return self.role in ("local", "host")
 
+    def _cell_contains_current_player_pawn(self, row: int, col: int) -> bool:
+        current_player = self.game.players[self.game.current_player]
+        return any(pawn.position == (row, col) for pawn in current_player.pawns)
+
     def _on_disk_click(self, idx: int) -> None:
         if self.role == "client":
             if self.game.current_player != self.local_player_id:
@@ -681,6 +691,3 @@ class Interface:
         self.root.mainloop()
 
 
-if __name__=="__main__":
-    ui = Interface()
-    ui.displayInterface()

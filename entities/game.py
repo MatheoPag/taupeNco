@@ -183,7 +183,7 @@ class Game:
         if self.sub_phase is None:
             self.sub_phase = "choix_disque"
             return False
-        if self.sub_phase == "choix_pion":
+        if self.sub_phase in ("choix_pion", "deplacement"):
             print("choix du pion")
             current_player = self.players[self.current_player]
             player_pawns = current_player.pawns
@@ -307,13 +307,3 @@ class Game:
             print("le deplacement n'est pas valide car la case est \
                 occupee par un autre pion")
         return False
-
-if __name__ == "__main__":
-    game = Game(
-            [
-                {"name": "John", "color": "green"}, 
-                {"name": "Jane", "color": "red"}, 
-                {"name": "Jim", "color": "yellow"}, 
-                {"name": "Jill", "color": "blue"}
-            ]
-        )
