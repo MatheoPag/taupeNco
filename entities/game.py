@@ -247,7 +247,7 @@ class Game:
 
 
     def try_move_chosen_pawn_to(
-        self, row: int, col: int, shuffle_disks: bool = True
+        self, row: int, col: int, send_rejouer, shuffle_disks: bool = True
     ) -> bool:
         """Phase mouvement : deplace le pion designe du joueur courant.
 
@@ -294,6 +294,7 @@ class Game:
                     self.current_player = (
                         (self.current_player + 1) % len(self.players)
                     )
+
 
                 if cur.disks.is_all_disk_visible():
                     cur.disks.hide_all_disks()

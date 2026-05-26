@@ -316,6 +316,11 @@ class Interface:
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
 
+    def change_player_and_update(self):
+        self.game.current_player = (
+                (self.game.current_player + 1) % len(self.game.players)
+            )
+        self.update_ui()
 
     # WIDGET PARTIE CENTRE
     def center(self):
@@ -376,16 +381,6 @@ class Interface:
             # Initialisation
             to_show = None
 
-            ''' Debug '''
-            def joueur_bloque():
-                
-                return #fonction
-            def joueur_rejoue():
-                return False
-            def pions_dans_tout_trous():
-                return False
-            ''' ~~~~~ '''
-
             # Titre (phase du jeu)
             match self.game.phase :
                 case "placement":
@@ -428,6 +423,7 @@ class Interface:
                         if self.game.is_player_blocked() :
                             text_title_subphase = f"Joueur {pnb} ne peut déplacer aucune taupe.\nIl passe son tour."
                             to_show = "blocked"
+                            self.game.sub_phase = "choix_disque"
 
                     case "deplacement": 
                         text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
@@ -471,7 +467,7 @@ class Interface:
 
                 # Bouton suivant
                 case "blocked" :
-                    next_button(canvas_right, "Suivant", "",  "e")
+                    next_button(canvas_right, "Suivant", self.change_player_and_update,  "e")
 
                 # Affiche le jeton de déplacement
                 case "move" :
@@ -480,11 +476,11 @@ class Interface:
                 # Joueur choisit si (re)joue ou pas
                 case "replay" :
                     next_button(canvas_right, "Rejouer", "",  "w")
-                    next_button(canvas_right, "Passer", False,  "e")
+                    next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
                     next_button(canvas_right, "Jouer", "",  "w")
-                    next_button(canvas_right, "Passer", "",  "e")
+                    next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
                 case "victory":
