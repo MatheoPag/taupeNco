@@ -183,7 +183,7 @@ class Game:
         if self.sub_phase is None:
             self.sub_phase = "choix_disque"
             return False
-        if self.sub_phase == "choix_pion":
+        if self.sub_phase in ("choix_pion", "deplacement"):
             print("choix du pion")
             current_player = self.players[self.current_player]
             player_pawns = current_player.pawns
