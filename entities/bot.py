@@ -66,7 +66,7 @@ def play_turn(game) -> bool:
         return play_placement(game)
     if game.phase == "mouvement":
         if game.sub_phase == "rejouer":
-            game.begin_player_turn()
+            game.start_bonus_turn()
             return play_movement(game)
         if game.sub_phase == "passer_tour":
             game.current_player = (game.current_player + 1) % len(game.players)

@@ -44,6 +44,7 @@ class Game:
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
+        self.bonus_move = False
         self.legal_moves = None
         self._pending_disk_sync = None
 
@@ -238,6 +239,11 @@ class Game:
         else:
             self.sub_phase = "choix_disque"
 
+    def start_bonus_turn(self) -> None:
+        """Second deplacement apres une case speciale (interdit de finir sur S)."""
+        self.bonus_move = True
+        self.begin_player_turn()
+
 
     def possible_moves(self, pawn_index, disk_index: int) -> list[tuple[int, int]]:
         pawn = self.players[self.current_player].pawns[pawn_index]
@@ -265,6 +271,8 @@ class Game:
             if chemin_bloque:
                 continue
             if not self.is_legal_target_cell(row, col, "mouvement"):
+                continue
+            if self.bonus_move and board.grid.get((q2, r2)) == "S":
                 continue
             cases_possibles.append((row, col))
         return cases_possibles
@@ -315,6 +323,7 @@ class Game:
                     print(f"Case speciale : {cur.name} rejoue.")
                     self.sub_phase = "rejouer"
                 else:
+                    self.bonus_move = False
                     self.current_player = (
                         (self.current_player + 1) % len(self.players)
                     )

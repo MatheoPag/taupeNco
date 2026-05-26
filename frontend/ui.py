@@ -340,6 +340,7 @@ class Interface:
         if self.role == "client":
             self._send_network_action({"type": "next_player"})
             return
+        self.game.bonus_move = False
         self.game.current_player = (
             (self.game.current_player + 1) % len(self.game.players)
         )
@@ -354,7 +355,7 @@ class Interface:
         if self.role == "client":
             self._send_network_action({"type": "replay_turn"})
             return
-        self.game.begin_player_turn()
+        self.game.start_bonus_turn()
         if self.role == "host":
             self._send_network_action({"type": "replay_turn"})
         self.update_ui()
@@ -715,12 +716,13 @@ class Interface:
         if action_type == "place_pawn":
             self.game.try_place_current_pawn(msg["row"], msg["col"])
         elif action_type == "next_player":
+            self.game.bonus_move = False
             self.game.current_player = (
                 (self.game.current_player + 1) % len(self.game.players)
             )
             self.game.begin_player_turn()
         elif action_type == "replay_turn":
-            self.game.begin_player_turn()
+            self.game.start_bonus_turn()
         elif action_type == "play_turn":
             self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
