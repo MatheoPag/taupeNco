@@ -254,6 +254,12 @@ class Interface:
                 return
             row, col, _ = coords
 
+            if (
+                self.game.phase == "mouvement"
+                and self.game.sub_phase in ("rejouer", "passer_tour")
+            ):
+                return
+
             # MULTIJOUEUR
             if self.role != "local":
                 # on n'agit que si c'est notre tour
@@ -316,10 +322,52 @@ class Interface:
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
 
+    def _is_local_turn(self) -> bool:
+        return (
+            self.role == "local"
+            or self.game.current_player == self.local_player_id
+        )
+
+    def _send_network_action(self, action: dict) -> None:
+        if self.role == "host":
+            self.network.send_data(action)
+        elif self.role == "client":
+            self.network.send_action(action)
+
     def change_player_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "next_player"})
+            return
         self.game.current_player = (
-                (self.game.current_player + 1) % len(self.game.players)
-            )
+            (self.game.current_player + 1) % len(self.game.players)
+        )
+        self.game.begin_player_turn()
+        if self.role == "host":
+            self._send_network_action({"type": "next_player"})
+        self.update_ui()
+
+    def replay_turn_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "replay_turn"})
+            return
+        self.game.begin_player_turn()
+        if self.role == "host":
+            self._send_network_action({"type": "replay_turn"})
+        self.update_ui()
+
+    def play_turn_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "play_turn"})
+            return
+        self.game.sub_phase = "choix_disque"
+        if self.role == "host":
+            self._send_network_action({"type": "play_turn"})
         self.update_ui()
 
     # WIDGET PARTIE CENTRE
@@ -429,19 +477,25 @@ class Interface:
                         text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
                         to_show = "move"
 
+                    case "rejouer":
+                        text_title_subphase = (
+                            f"La taupe du joueur {pnb} est sur une case spéciale.\n"
+                            "Il peut rejouer un coup."
+                        )
+                        to_show = "replay"
+
+                    case "passer_tour":
+                        text_title_subphase = (
+                            f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
+                            "Il a le droit de passer son tour."
+                        )
+                        to_show = "can_pass"
+
                     case None:
                         text_title_subphase = "Debug : subphase = None" # debug (plus tard : faire en sorte que rien n'apparaissent)
 
                     case _: 
                         text_title_subphase = "⚠︎ Subphase inconnue ⚠︎" 
-
-                    #     case joueur_rejoue() : # à adapter
-                    #     text_title_subphase = f"La taupe du joueur {pnb} est sur une case spéciale.\nIl peut rejouer un coup."
-                    #     to_show = "replay"
-
-                    # case pions_dans_tout_trous() : # à adapter
-                    #     text_title_subphase = f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\nIl a le droit passer son tour."
-                    #     to_show = "can_pass"
             
             label_title_subphase = tk.Label(
                 self.frame_right,
@@ -475,11 +529,11 @@ class Interface:
 
                 # Joueur choisit si (re)joue ou pas
                 case "replay" :
-                    next_button(canvas_right, "Rejouer", "",  "w")
+                    next_button(canvas_right, "Rejouer", self.replay_turn_and_update,  "w")
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
-                    next_button(canvas_right, "Jouer", "",  "w")
+                    next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
@@ -664,6 +718,11 @@ class Interface:
             self.game.current_player = (
                 (self.game.current_player + 1) % len(self.game.players)
             )
+            self.game.begin_player_turn()
+        elif action_type == "replay_turn":
+            self.game.begin_player_turn()
+        elif action_type == "play_turn":
+            self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
             self.game.try_choose_disk(msg["disk_selected"], self.update_ui)
         elif action_type == "choose_pawn":

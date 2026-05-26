@@ -40,6 +40,7 @@ class Game:
                 self.pawns_per_player[len(players)]
             ) for i in range(len(players))]
         self.boards = board.BoardPile(self.colors, self.board_size, board_orientation)
+        self.boards.pop_top()
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
@@ -152,7 +153,7 @@ class Game:
 
         if self.check_placement(self.players):
             self.phase = "mouvement"
-            self.sub_phase = "choix_disque" # modifié par Tristan
+            self.begin_player_turn()
         return True
 
     def try_choose_disk(self, disk_selected: int, update_ui) -> bool:
@@ -161,6 +162,8 @@ class Game:
             return False
         if self.sub_phase is None:
             self.sub_phase = "choix_disque"
+        if self.sub_phase == "passer_tour":
+            return False
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
@@ -212,7 +215,28 @@ class Game:
             if len(self.possible_moves(i, cur.disk_selected)) == 0:
                 pawn_blocked += 1
         if pawn_blocked == len(cur.pawns):
-            return True 
+            return True
+
+    def is_all_pawns_in_holes(self) -> bool:
+        """True si toutes les taupes posees du joueur courant sont sur un trou (X)."""
+        cur = self.players[self.current_player]
+        board = self.boards.get_top()
+        placed = [p for p in cur.pawns if p.position is not None]
+        if not placed:
+            return False
+        for pawn in placed:
+            row, col = pawn.position
+            q, r = board.from_2d_to_axial(row, col)
+            if board.grid.get((q, r)) != "X":
+                return False
+        return True
+
+    def begin_player_turn(self) -> None:
+        """Debut de tour : choix disque ou proposition de passer si tout est dans un trou."""
+        if self.is_all_pawns_in_holes():
+            self.sub_phase = "passer_tour"
+        else:
+            self.sub_phase = "choix_disque"
 
 
     def possible_moves(self, pawn_index, disk_index: int) -> list[tuple[int, int]]:
@@ -247,7 +271,7 @@ class Game:
 
 
     def try_move_chosen_pawn_to(
-        self, row: int, col: int, send_rejouer, shuffle_disks: bool = True
+        self, row: int, col: int, shuffle_disks: bool = True
     ) -> bool:
         """Phase mouvement : deplace le pion designe du joueur courant.
 
@@ -285,15 +309,16 @@ class Game:
 
             board = self.boards.get_top()
             if self.try_move_pawn_to_cell(pawn, row, col, "mouvement"):
-                self.sub_phase = "choix_disque"
                 self.legal_moves = None
                 q2, r2 = board.from_2d_to_axial(row, col)
                 if board.grid.get((q2, r2)) == "S":
                     print(f"Case speciale : {cur.name} rejoue.")
+                    self.sub_phase = "rejouer"
                 else:
                     self.current_player = (
                         (self.current_player + 1) % len(self.players)
                     )
+                    self.begin_player_turn()
 
 
                 if cur.disks.is_all_disk_visible():
