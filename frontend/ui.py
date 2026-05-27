@@ -161,7 +161,7 @@ class Interface:
             cy = h // 2 - 70 # NE PAS TOUCHER
             r = min(w, h) // 2.5  # NE PAS TOUCHER
             STEP_X = int(r * 1.8 / (self._center_columns - 1))
-            STEP_Y = int(r * 0.9 / (self._center_rows - 1))
+            STEP_Y = int(r * 0.9 / (self._center_rows - 1)) * 1.7
             self._center_STEP_X = STEP_X
             self._center_STEP_Y = STEP_Y
             self._center_pad_x = cx - ((self._center_columns - 1) * STEP_X) // 2
@@ -179,6 +179,30 @@ class Interface:
             grid = self.game.boards.get_top().to_2d_grid()
             for row in grid:
                 print(row)
+                
+            
+            for i in range(rows):
+                for j in range(columns):
+                    if grid[i][j] is None:
+                        continue
+                    x = self._center_pad_x + j * STEP_X
+                    y = self._center_pad_y + i * STEP_Y
+                    
+                    if j + 2 < columns and grid[i][j + 2] is not None:
+                        x2 = self._center_pad_x + (j + 2) * STEP_X
+                        y2 = self._center_pad_y + i * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+                        
+                    if i + 1 < rows and j - 1 >= 0 and grid[i + 1][j - 1] is not None:
+                        x2 = self._center_pad_x + (j - 1) * STEP_X
+                        y2 = self._center_pad_y + (i + 1) * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+    
+                    if i + 1 < rows and j + 1 < columns and grid[i + 1][j + 1] is not None:
+                        x2 = self._center_pad_x + (j + 1) * STEP_X
+                        y2 = self._center_pad_y + (i + 1) * STEP_Y
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+                    
             # 1ère couche : plateau (cases existantes)
             for r in range(rows):
                 for c in range(columns):
@@ -227,28 +251,7 @@ class Interface:
                                 )
                                 
                                 
-            for i in range(rows):
-                for j in range(columns):
-                    if grid[i][j] is None:
-                        continue
-                    x = self._center_pad_x + j * STEP_X
-                    y = self._center_pad_y + i * STEP_Y
-                    
-                    if j + 2 < columns and grid[i][j + 2] is not None:
-                        x2 = self._center_pad_x + (j + 2) * STEP_X
-                        y2 = self._center_pad_y + i * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#addapter la couleur en fonction du plateau
-                        
-                    if i + 1 < rows and j - 1 >= 0 and grid[i + 1][j - 1] is not None:
-                        x2 = self._center_pad_x + (j - 1) * STEP_X
-                        y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#pareil
-    
-                    if i + 1 < rows and j + 1 < columns and grid[i + 1][j + 1] is not None:
-                        x2 = self._center_pad_x + (j + 1) * STEP_X
-                        y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#pareil
-                    
+            
 
         
 
