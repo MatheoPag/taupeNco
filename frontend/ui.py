@@ -142,7 +142,7 @@ class Interface:
 
     def _setup_center_board(self):
         current_color_int = self.game.boards.get_top().color_int
-        color = f"layer{current_color_int}"
+        color = f"layer{current_color_int}c"
         canvas_circle = tk.Canvas(
             self.frame_center,
             bg=self.colors["background"],
@@ -237,17 +237,17 @@ class Interface:
                     if j + 2 < columns and grid[i][j + 2] is not None:
                         x2 = self._center_pad_x + (j + 2) * STEP_X
                         y2 = self._center_pad_y + i * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#addapter la couleur en fonction du plateau
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#addapter la couleur en fonction du plateau
                         
                     if i + 1 < rows and j - 1 >= 0 and grid[i + 1][j - 1] is not None:
                         x2 = self._center_pad_x + (j - 1) * STEP_X
                         y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#pareil
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#pareil
     
                     if i + 1 < rows and j + 1 < columns and grid[i + 1][j + 1] is not None:
                         x2 = self._center_pad_x + (j + 1) * STEP_X
                         y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors['layer0c'], width=1)#pareil
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)#pareil
                     
 
         
