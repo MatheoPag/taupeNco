@@ -69,19 +69,6 @@ class Menu:
             'iptarget' : tk.StringVar() # Adresse IP pour rejoindre l'host
         }
 
-        # Lancement de la musique du menu
-        #self.play_music()
-
-        # Création des pages
-        self._build_pages()
-    
-    # Musique du menu
-    def play_music(self):
-        song = pygame.mixer.music
-        song.init()
-        song.load("frontend/ressources/musics/Overture_Super-Mario-Galaxy.mp3")
-        song.play(-1)
-
 
     # Construction des pages
     def _build_pages(self):
@@ -501,6 +488,31 @@ class Menu:
         self.root.mainloop()
 
         return self.game_config
+class Music:
+    def __init__(self):
+        pygame.mixer.init()
+        self.musiques = {
+            0: "frontend/ressources/musics/Overture_Super-Mario-Galaxy.mp3",
+            1: "frontend/ressources/musics/******.mp3",
+            2: "frontend/ressources/musics/******.mp3",
+            3: "frontend/ressources/musics/*******.mp3",
+        }
+        self.plateau_actuel = None
+
+    def changer_plateau(self, numero_plateau: int) -> None:
+        # Vérification même plateau
+        if numero_plateau == self.plateau_actuel:
+            return
+
+        self.plateau_actuel = numero_plateau
+        musique = self.musiques.get(numero_plateau)
+
+        if musique is None:
+            return
+
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load(musique)
+        pygame.mixer.music.play(-1)  #boucle
 
 
 if __name__ == "__main__":

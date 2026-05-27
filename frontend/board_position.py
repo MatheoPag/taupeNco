@@ -167,4 +167,4 @@ class Boards:
 
 if __name__ == "__main__":
     menu = Boards()
-    menu.display()
+    menu.display()   
