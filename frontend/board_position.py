@@ -178,7 +178,6 @@ class Boards:
         # Permet de retrouver l'image, peu importe le cwd (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
         cwd = os.path.dirname(__file__)
         png_path = os.path.join(cwd, "ressources/pictures/hexa-test.png")
-        # print(f"\n{png_path}\n") # debug
 
         png = { # Change la couleur du png en fonction de la couche
             0 : png_path,

@@ -10,7 +10,7 @@ class Game:
                 nb_bots: int, 
                 board_orientation: list[int]) -> None:
         self.board_size = 9
-        self.pawns_per_player = {2 : 2, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
+        self.pawns_per_player = {2 : 10, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
         self.colors = [
                 (0, "Surface"),
                 (1, "Terre arable"),
