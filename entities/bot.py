@@ -11,13 +11,28 @@ def _placement_cells(game) -> list[tuple[int, int]]:
     return cells
 
 
-def _movement_options(game) -> list[tuple[int, int, tuple[int, int]]]:
-    """Triples (indice disque, indice pion, destination) realisables."""
+def _pawn_on_hole(game, pawn) -> bool:
+    """True si le pion est sur une case trou (X) du plateau courant."""
+    if pawn.position is None:
+        return False
+    board = game.boards.get_top()
+    row, col = pawn.position
+    q, r = board.from_2d_to_axial(row, col)
+    return board.grid.get((q, r)) == "X"
+
+
+def _movement_options_for_pawns(
+    game,
+    pawn_filter,
+) -> list[tuple[int, int, tuple[int, int]]]:
+    """Triples (indice disque, indice pion, destination) pour les pions retenus."""
     cur = game.players[game.current_player]
     disks = cur.disks.get_disks()
     hidden_disks = [i for i, d in enumerate(disks) if not d[1]]
     placed_pawns = [
-        (i, p) for i, p in enumerate(cur.pawns) if p.position is not None
+        (i, p)
+        for i, p in enumerate(cur.pawns)
+        if p.position is not None and pawn_filter(game, p)
     ]
     options = []
     for disk_idx in hidden_disks:
@@ -28,6 +43,18 @@ def _movement_options(game) -> list[tuple[int, int, tuple[int, int]]]:
     return options
 
 
+def _movement_options(game) -> list[tuple[int, int, tuple[int, int]]]:
+    """Priorise les pions hors trou ; sinon ceux dans un trou si seuls mobilisables."""
+    options = _movement_options_for_pawns(
+        game, lambda g, p: not _pawn_on_hole(g, p)
+    )
+    if options:
+        return options
+    return _movement_options_for_pawns(
+        game, lambda g, p: _pawn_on_hole(g, p)
+    )
+
+
 def play_placement(game) -> bool:
     cells = _placement_cells(game)
     if not cells:
@@ -36,7 +63,18 @@ def play_placement(game) -> bool:
     return game.try_place_current_pawn(row, col)
 
 
+def play_replay_turn(game) -> bool:
+    """Le bot rejoue toujours apres une case speciale."""
+    game.start_bonus_turn()
+    return play_movement(game)
+
+
 def play_movement(game) -> bool:
+    if game.is_all_pawns_in_holes():
+        game.current_player = (game.current_player + 1) % len(game.players)
+        game.begin_player_turn()
+        return True
+
     options = _movement_options(game)
     if not options:
         return False
@@ -55,7 +93,11 @@ def play_movement(game) -> bool:
         game.current_player = (game.current_player + 1) % len(game.players)
         game.begin_player_turn()
         return True
-    return game.try_move_chosen_pawn_to(row, col)
+    if not game.try_move_chosen_pawn_to(row, col):
+        return False
+    if game.sub_phase == "rejouer":
+        return play_replay_turn(game)
+    return True
 
 
 def play_turn(game) -> bool:
@@ -66,8 +108,7 @@ def play_turn(game) -> bool:
         return play_placement(game)
     if game.phase == "mouvement":
         if game.sub_phase == "rejouer":
-            game.start_bonus_turn()
-            return play_movement(game)
+            return play_replay_turn(game)
         if game.sub_phase == "passer_tour":
             game.current_player = (game.current_player + 1) % len(game.players)
             game.begin_player_turn()
