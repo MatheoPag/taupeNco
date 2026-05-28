@@ -7,9 +7,9 @@ class Disks:
                 [1, False],
                 [1, False],
                 [1, False],
-                [1, False],
-                [1, False],
-                [1, False],
+                [3, False],
+                [3, False],
+                [3, False],
             ]
         # self.__disks = [
         #         [1, False],
