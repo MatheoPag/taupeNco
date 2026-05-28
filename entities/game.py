@@ -17,23 +17,22 @@ class Game:
             5 : {2 : 19, 3 : 13, 4 : 10},
             6 : {2 : 16, 3 : 11, 4 : 8},
         }
-        # self.pawns_per_player = {2 : 10, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
-        self.colors = [
-                (0, "Surface"),
-                (1, "Terre arable"),
-                (2, "Sous-sol"),
-                (3, "Roche mère"),
+        self.player_colors = [
+                "Terre",
+                "Pierre",
+                "Surface",
+                "Terre arable",
             ]
         self.nb_human_players = nb_players
         self.nb_bots = nb_bots
         self.current_player = random.randint(0, nb_players + nb_bots - 1)
         players = (
             [
-                {"name": f"Player {i+1}", "color": self.colors[i]}
+                {"name": f"Player {i+1}", "color": self.player_colors[i]}
                 for i in range(nb_players)
             ]
             + [
-                {"name": f"Bot", "color": self.colors[i + nb_players]}
+                {"name": f"Bot", "color": self.player_colors[i + nb_players]}
                 for i in range(nb_bots)
             ]
         )
@@ -46,7 +45,7 @@ class Game:
                 players[i]["color"], 
                 self.pawns_per_player_per_board[nb_boards][len(players)]
             ) for i in range(len(players))]
-        self.boards = board.BoardPile(self.colors, self.board_size, board_orientation, nb_boards)
+        self.boards = board.BoardPile(self.board_size, board_orientation, nb_boards)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None

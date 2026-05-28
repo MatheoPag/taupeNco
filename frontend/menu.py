@@ -69,7 +69,7 @@ class Menu:
             'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
             'iptarget' : tk.StringVar(value="127.0.0.1"), # Adresse IP pour rejoindre l'host
-            'board_orientation' : [0, 0, 0, 0],
+            'board_orientation' : [0, 0, 0, 0, 0, 0],
         }
         self._pending_gamemode = None
         self._pending_nbboard = None
@@ -486,8 +486,9 @@ class Menu:
     def _start_game(self, gamemode, nbboard, board_orientation=None):
         """Configure la partie et ferme le menu pour lancer le jeu."""
         if board_orientation is None:
-            board_orientation = [0, 0, 0, 0]
-        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
+            board_orientation = [0, 0, 0, 0, 0, 0]
+        nbplayer = self.game_config['nbplayer']
+        self.game_config['nbplayer'] = nbplayer.get() if hasattr(nbplayer, 'get') else nbplayer
         self.game_config['board_orientation'] = board_orientation
         self.game_config['gamemode'] = gamemode
         self.game_config['nbboard'] = nbboard
@@ -504,7 +505,6 @@ class Menu:
         self._board_position_return_frame = return_frame
         self._pending_gamemode = gamemode
         self._pending_nbboard = nbboard
-        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
         self.root.geometry("800x800")
         self.root.minsize(800, 800)
         self.root.maxsize(800, 800)
@@ -534,7 +534,7 @@ class Menu:
         self.game_config['connexionmode'] ='local'
         self.game_config['gamemode'] = 'solobot'
         self.game_config['nbboard'] = 4
-        self.game_config['board_orientation'] = [0, 0, 0, 0]
+        self.game_config['board_orientation'] = [0, 0, 0, 0, 0, 0]
         self.game_config['iphost'] = 'None'
         self.game_config['iptarget'] = 'None'
         self.game_config['nbplayer'] = 1

@@ -9,7 +9,7 @@ from system.client import GameClient
 
 def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
     if board_orientation is None:
-        board_orientation = [0, 0, 0, 0]
+        board_orientation = [0, 0, 0, 0, 0, 0]
     game_instance = game_entity.Game(nbplayer, 1 if bot else 0, nb_boards, board_orientation)
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
@@ -17,7 +17,7 @@ def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
 
 def start_host(nbplayer, host_ip, nb_boards=4, board_orientation=None):
     if board_orientation is None:
-        board_orientation = [0, 0, 0, 0]
+        board_orientation = [0, 0, 0, 0, 0, 0]
     print(f"Partie hébergée - IP à partager : {host_ip}:5555")
     game_server = GameServer(max_player=nbplayer, host="0.0.0.0", port=5555)
     game_server.start()
@@ -88,7 +88,7 @@ def start_client(target_ip):
         data["nbplayer"],
         0,
         data.get("nbboard", 4),
-        data.get("board_orientation", [0, 0, 0, 0]),
+        [0, 0] + data.get("board_orientation", [0, 0, 0, 0]),
     )
     game_instance.current_player = data["current_player"]
     if "players_disks" in data:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     game_config = game_menu.display()
     print(game_config)
 
-    board_orientation = game_config.get("board_orientation", [0, 0, 0, 0])
+    board_orientation = [0, 0] + game_config.get("board_orientation", [0, 0, 0, 0])
 
     if game_config["connexionmode"] == "local":
         if game_config["gamemode"] == "classic" or game_config["gamemode"] == "custom":
