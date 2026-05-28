@@ -8,9 +8,16 @@ class Game:
     def __init__(self, 
                 nb_players: int, 
                 nb_bots: int, 
+                nb_boards: int,
                 board_orientation: list[int]) -> None:
         self.board_size = 9
-        self.pawns_per_player = {2 : 10, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
+        self.pawns_per_player_per_board = {
+            3 : {2 : 9, 3 : 6, 4 : 5},
+            4 : {2 : 10, 3 : 7, 4 : 6},
+            5 : {2 : 19, 3 : 13, 4 : 10},
+            6 : {2 : 16, 3 : 11, 4 : 8},
+        }
+        # self.pawns_per_player = {2 : 10, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
         self.colors = [
                 (0, "Surface"),
                 (1, "Terre arable"),
@@ -37,9 +44,9 @@ class Game:
                 i, 
                 players[i]["name"], 
                 players[i]["color"], 
-                self.pawns_per_player[len(players)]
+                self.pawns_per_player_per_board[nb_boards][len(players)]
             ) for i in range(len(players))]
-        self.boards = board.BoardPile(self.colors, self.board_size, board_orientation)
+        self.boards = board.BoardPile(self.colors, self.board_size, board_orientation, nb_boards)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
