@@ -47,6 +47,7 @@ class Game:
         self.legal_moves = None
         self._pending_disk_sync = None
         self._board_descended = False
+        self.winner = None
 
         for p in self.players:
             p.disks.mix_disks()
@@ -55,6 +56,10 @@ class Game:
         if player_id is None:
             player_id = self.current_player
         return player_id >= self.nb_human_players
+
+    def _two_player_last_board(self) -> bool:
+        """Regles speciales centre / chemins pointilles (2 joueurs, roche mere)."""
+        return len(self.players) == 2 and len(self.boards.pile) == 1
 
     def get_players_disks_state(self) -> list[list[list[int]]]:
         """Etat des disques de chaque joueur (pour la synchro reseau)."""
@@ -246,6 +251,38 @@ class Game:
                 return False
         return True
 
+    def get_center_cell(self) -> tuple[int, int]:
+        """Case centrale du plateau courant, en coordonnees 2D."""
+        board = self.boards.get_top()
+        return board.axial_to_2d(*board.center)
+
+    def get_player_at_center(self):
+        """Joueur possedant un pion vivant au centre du dernier plateau."""
+        if len(self.boards.pile) != 1:
+            return None
+        center_row, center_col = self.get_center_cell()
+        for player in self.players:
+            for pawn in player.pawns:
+                if (
+                    pawn.state == "alive"
+                    and pawn.position == (center_row, center_col)
+                ):
+                    return player
+        return None
+
+    def check_victory(self) -> bool:
+        """True si un joueur occupe le centre du dernier plateau."""
+        if self.phase == "victoire":
+            return True
+        winner = self.get_player_at_center()
+        if winner is None:
+            return False
+        print(f"{winner.name} a gagne.")
+        self.winner = winner
+        self.phase = "victoire"
+        self.sub_phase = None
+        return True
+
     def consume_board_descent(self) -> bool:
         """True une fois apres un pop_top, puis remet le flag a False."""
         if not self._board_descended:
@@ -256,6 +293,9 @@ class Game:
     def check_board_descent(self) -> None:
         """Verifie si tous les trous sont remplis et declenche la descente de plateau."""
         if not self.are_all_holes_filled():
+            return
+        if len(self.boards.pile) == 1:
+            self.check_victory()
             return
         top = self.boards.get_top()
         print(
@@ -317,6 +357,11 @@ class Game:
             if not self.is_legal_target_cell(row, col, "mouvement"):
                 continue
             if self.bonus_move and board.grid.get((q2, r2)) == "S":
+                continue
+            if (
+                self._two_player_last_board()
+                and board.uses_dotted_path_to_center(q1, r1, q2, r2)
+            ):
                 continue
             cases_possibles.append((row, col))
         return cases_possibles
@@ -383,6 +428,8 @@ class Game:
                             "disks": cur.disks.get_disks(),
                         }
                 self.check_board_descent()
+                if self.phase != "victoire":
+                    self.check_victory()
                 return True
             print("le deplacement n'est pas valide car la case est \
                 occupee par un autre pion")

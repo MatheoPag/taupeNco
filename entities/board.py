@@ -33,7 +33,7 @@ class Board:
 
     def rotate_60(self) -> None:
         """Recalcule les coordonnees des marqueurs du plateau apres +60 deg."""
-        for kind in ("X", "S"):
+        for kind in ("X", "S", "J"):
             rotated = []
             for q, r in self.markers.get(kind, []):
                 new_q, new_r = self._rotate_axial_60(q, r)
@@ -49,8 +49,8 @@ class Board:
     def _apply_markers(self) -> None:
         """Place les marqueurs sur la grille axiale (q, r)."""
         markers = self.markers
-        for kind in ("X", "S"):
-            for q, r in markers[kind]:
+        for kind in ("X", "S", "J"):
+            for q, r in markers.get(kind, []):
                 if (q, r) not in self.grid:
                     raise ValueError(
                         f"Marqueur {kind} hors plateau : (q={q}, r={r})"
@@ -138,7 +138,7 @@ class Board:
         """Projette la grille axiale (q, r) dans une liste 2D [ligne][colonne].
 
         Les cases hors hexagone valent None
-        Les cases valides gardent leur valeur (0, 'X', 'S').
+        Les cases valides gardent leur valeur (0, 'X', 'S', 'J').
         A utiliser pour dessiner la grille dans tkinter.
         """
         total_cols = 2 * self.size - 1
@@ -162,28 +162,56 @@ class Board:
             print(" ".join(cells))
             print()
 
+    def is_dotted_direction_from_center(self, q: int, r: int) -> bool:
+        """True si (q, r) est aligne avec le centre via un chemin pointille (J)."""
+        if (q, r) == self.center:
+            return False
+        if not self.is_straight_line(*self.center, q, r):
+            return False
+        steps = self.line_path(*self.center, q, r)
+        first = steps[0] if steps else (q, r)
+        return self.grid.get(first) == "J"
+
+    def uses_dotted_path_to_center(
+        self, q1: int, r1: int, q2: int, r2: int
+    ) -> bool:
+        """True si l'arrivee au centre passe par un chemin pointille (J)."""
+        if (q2, r2) != self.center:
+            return False
+        if self.grid.get((q1, r1)) == "J":
+            return True
+        for cell in self.line_path(q1, r1, q2, r2):
+            if self.grid.get(cell) == "J":
+                return True
+        return False
+   
+
 class BoardPile:
     def __init__(self, 
                 colors:list[tuple[int, str]], 
                 size: int,
                 board_orientation: list[int]) -> None:
-        self._markers_by_layer: list[dict[str, list[tuple[int, int]]]] = [
+        self._markers_by_layer = [
             {
                 "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
                     (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
                 "S": [],
+                "J": [],
             },
             {
                 "X": [(0, -4), (2, -3), (-1, -2), (3, -1), (-4, 4), (0, 3), (-2, 3), (-3, 1)],
                 "S": [(3, -3), (-4, 0), (1, 0), (0, 4)],
+                "J": [],
             },
             {
                 "X": [(1, -2), (-4, 0), (4, 0), (-2, 4)],
                 "S": [(2, -4), (-4, 1), (0, 1), (2, 2)],
+                "J": [],
             },
             {
                 "X": [(0, 0)],
                 "S": [(4, -4), (-1, -2), (1, 2), (-4, 4)],
+                "J": [(0, -1), (1, 0), (-1, 1)]
             },
         ]
 
@@ -200,7 +228,10 @@ class BoardPile:
                             )
                         )
         self.nb_boards = len(colors)
-    
+        self.pop_top()
+        self.pop_top()
+        self.pop_top()
+        
     def get_top(self) -> Board:
         return self.pile[0]
     
