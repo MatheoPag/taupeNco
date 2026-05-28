@@ -197,7 +197,7 @@ class Menu:
             button_back1,
         ) = self._build_game_mode_page("Mode local")
 
-        # FENÊTRE DU CHOIX DU MODE DE JEU (multijoueur — hôte)
+        # FENÊTRE DU CHOIX DU MODE DE JEU
         (
             self.frame_multiplayer_game_mode,
             button_multi_classic,
@@ -323,7 +323,7 @@ class Menu:
         button_custom.config(command=self.create_local_custom)
         button_back1.config(command=lambda: frame_connexion_mode.tkraise())
 
-            # Boutons de la page configuration d'une partie (multijoueur — hôte)
+            # Boutons de la page configuration d'une partie
         button_multi_classic.config(command=self.create_multiplayer_classic)
         button_multi_custom.config(command=self.create_multiplayer_custom)
         button_back_multi_config.config(

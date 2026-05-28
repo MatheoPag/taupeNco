@@ -299,7 +299,7 @@ class Game:
             return
         top = self.boards.get_top()
         print(
-            f"Tous les trous du plateau « {top.name} » sont remplis : "
+            f"Tous les trous du plateau {top.name} sont remplis : "
             "descente au plateau inferieur."
         )
 
