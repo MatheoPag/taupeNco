@@ -68,7 +68,7 @@ class Menu:
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
             'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
-            'iptarget' : tk.StringVar(), # Adresse IP pour rejoindre l'host
+            'iptarget' : tk.StringVar(value="127.0.0.1"), # Adresse IP pour rejoindre l'host
             'board_orientation' : [0, 0, 0, 0],
         }
         self._pending_gamemode = None
@@ -483,6 +483,22 @@ class Menu:
         self.game_config['connexionmode']='None'
 
 
+    def _start_game(self, gamemode, nbboard, board_orientation=None):
+        """Configure la partie et ferme le menu pour lancer le jeu."""
+        if board_orientation is None:
+            board_orientation = [0, 0, 0, 0]
+        self.game_config['nbplayer'] = self.game_config['nbplayer'].get()
+        self.game_config['board_orientation'] = board_orientation
+        self.game_config['gamemode'] = gamemode
+        self.game_config['nbboard'] = nbboard
+        if self.game_config['connexionmode'] == 'multiplayer':
+            self.game_config['iphost'] = get_local_ip()
+            self.game_config['iptarget'] = 'None'
+        else:
+            self.game_config['iphost'] = 'None'
+            self.game_config['iptarget'] = 'None'
+        self.root.destroy()
+
     def _show_board_position(self, return_frame, gamemode, nbboard):
         """Affiche la page d'orientation des plateaux avant de lancer la partie."""
         self._board_position_return_frame = return_frame
@@ -502,16 +518,7 @@ class Menu:
             self._board_position_return_frame.tkraise()
 
     def _finish_board_position(self, orientations):
-        self.game_config['board_orientation'] = orientations
-        self.game_config['gamemode'] = self._pending_gamemode
-        self.game_config['nbboard'] = self._pending_nbboard
-        if self.game_config['connexionmode'] == 'multiplayer':
-            self.game_config['iphost'] = get_local_ip()
-            self.game_config['iptarget'] = 'None'
-        else:
-            self.game_config['iphost'] = 'None'
-            self.game_config['iptarget'] = 'None'
-        self.root.destroy()
+        self._start_game(self._pending_gamemode, self._pending_nbboard, orientations)
 
 
     # CONFIG LOCAL 
@@ -520,11 +527,7 @@ class Menu:
         self._show_board_position(self.frame_local_mode, 'classic', 4)
 
     def create_local_custom(self):
-        self._show_board_position(
-            self.frame_local_mode,
-            'custom',
-            self.game_config['nbboard'].get(),
-        )
+        self._start_game('custom', self.game_config['nbboard'].get())
 
         # Mode solo
     def create_local_solo(self):
@@ -544,11 +547,7 @@ class Menu:
         self._show_board_position(self.frame_multiplayer_game_mode, 'classic', 4)
 
     def create_multiplayer_custom(self):
-        self._show_board_position(
-            self.frame_multiplayer_game_mode,
-            'custom',
-            self.game_config['nbboard'].get(),
-        )
+        self._start_game('custom', self.game_config['nbboard'].get())
 
 
     # CONFIG ONLINE
