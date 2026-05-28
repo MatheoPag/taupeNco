@@ -278,9 +278,10 @@ class BoardPile:
         start = len(LAYER_ORDER) - nb_boards
         for offset, layer_name in enumerate(LAYER_ORDER[start:]):
             layer_markers = copy.deepcopy(self._markers_by_layer[layer_name])
+            layer_index = start + offset
             orientation = (
-                board_orientation[offset]
-                if offset < len(board_orientation)
+                board_orientation[layer_index]
+                if layer_index < len(board_orientation)
                 else 0
             )
             self.pile.append(

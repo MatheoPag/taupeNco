@@ -178,6 +178,8 @@ class Game:
             self.sub_phase = "choix_disque"
         if self.sub_phase == "passer_tour":
             return False
+        if not self.has_pawns_on_board():
+            return False
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
@@ -230,6 +232,11 @@ class Game:
                 pawn_blocked += 1
         if pawn_blocked == len(cur.pawns):
             return True
+
+    def has_pawns_on_board(self) -> bool:
+        """True si le joueur courant a au moins un pion non elimine."""
+        cur = self.players[self.current_player]
+        return any(p.state != "dead" for p in cur.pawns)
 
     def is_all_pawns_in_holes(self) -> bool:
         """True si toutes les taupes posees du joueur courant sont sur un trou (X)."""
@@ -323,8 +330,8 @@ class Game:
         self._board_descended = True
 
     def begin_player_turn(self) -> None:
-        """Debut de tour : choix disque ou proposition de passer si tout est dans un trou."""
-        if self.is_all_pawns_in_holes():
+        """Debut de tour : choix disque ou proposition de passer si ineligible."""
+        if not self.has_pawns_on_board() or self.is_all_pawns_in_holes():
             self.sub_phase = "passer_tour"
         else:
             self.sub_phase = "choix_disque"

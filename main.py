@@ -88,7 +88,7 @@ def start_client(target_ip):
         data["nbplayer"],
         0,
         data.get("nbboard", 4),
-        [0, 0] + data.get("board_orientation", [0, 0, 0, 0]),
+        data.get("board_orientation", [0, 0, 0, 0, 0, 0]),
     )
     game_instance.current_player = data["current_player"]
     if "players_disks" in data:
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     game_config = game_menu.display()
     print(game_config)
 
-    board_orientation = [0, 0] + game_config.get("board_orientation", [0, 0, 0, 0])
+    board_orientation = game_config.get("board_orientation", [0, 0, 0, 0, 0, 0])
 
     if game_config["connexionmode"] == "local":
         if game_config["gamemode"] == "classic" or game_config["gamemode"] == "custom":

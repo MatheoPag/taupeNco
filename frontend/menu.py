@@ -136,7 +136,6 @@ class Menu:
             bg=self.colors['grey'],
             bd=0,
             relief='flat',
-            command=self.create_local_solo
         )
         button_bot.pack(fill='both', expand=True)
 
@@ -195,15 +194,23 @@ class Menu:
             button_classic,
             button_custom,
             button_back1,
-        ) = self._build_game_mode_page("Mode local")
+        ) = self._build_game_mode_page("Mode local", show_player_count=True)
 
-        # FENÊTRE DU CHOIX DU MODE DE JEU
+        # FENÊTRE DU CHOIX DU MODE DE JEU (solo)
+        (
+            self.frame_solo_mode,
+            button_solo_classic,
+            button_solo_custom,
+            button_back_solo,
+        ) = self._build_game_mode_page("Mode solo", show_player_count=False)
+
+        # FENÊTRE DU CHOIX DU MODE DE JEU (multijoueur en ligne)
         (
             self.frame_multiplayer_game_mode,
             button_multi_classic,
             button_multi_custom,
             button_back_multi_config,
-        ) = self._build_game_mode_page("Multijoueur en ligne")
+        ) = self._build_game_mode_page("Multijoueur en ligne", show_player_count=True)
 
         # FENÊTRE ORIENTATION DES PLATEAUX
         self.frame_board_position = tk.Frame(self.root, bg=self.colors['background'])
@@ -312,6 +319,7 @@ class Menu:
         frame_connexion_mode.tkraise()
 
             # Boutons de la page d'accueil
+        button_bot.config(command=lambda: self.set_connexion_solo(self.frame_solo_mode))
         button_local.config(command=lambda : self.set_connexion_local(self.frame_local_mode))
         button_online.config(
             command=lambda : self.set_connexion_multiplayer(frame_multiplayer_mode)
@@ -323,7 +331,12 @@ class Menu:
         button_custom.config(command=self.create_local_custom)
         button_back1.config(command=lambda: frame_connexion_mode.tkraise())
 
-            # Boutons de la page configuration d'une partie
+            # Boutons de la page configuration d'une partie (solo)
+        button_solo_classic.config(command=self.create_solo_classic)
+        button_solo_custom.config(command=self.create_solo_custom)
+        button_back_solo.config(command=lambda: frame_connexion_mode.tkraise())
+
+            # Boutons de la page configuration d'une partie (multijoueur en ligne)
         button_multi_classic.config(command=self.create_multiplayer_classic)
         button_multi_custom.config(command=self.create_multiplayer_custom)
         button_back_multi_config.config(
@@ -334,8 +347,8 @@ class Menu:
         button_back2.config(command=lambda: frame_connexion_mode.tkraise())
 
 
-    def _build_game_mode_page(self, title_text):
-        """Construit une page de choix du mode de jeu (joueurs, classique/personnalisé)."""
+    def _build_game_mode_page(self, title_text, show_player_count=True):
+        """Construit une page de choix du mode de jeu (classique/personnalisé)."""
         frame = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame.grid(row=0, column=0, sticky='nsew')
 
@@ -344,40 +357,41 @@ class Menu:
         )
         label_title.pack()
 
-        label_player_title = tk.Label(
-            frame,
-            text="Nombre de joueur : ",
-            font=('', 16),
-            bg=self.colors['background'],
-        )
-        label_player_title.pack()
+        if show_player_count:
+            label_player_title = tk.Label(
+                frame,
+                text="Nombre de joueur : ",
+                font=('', 16),
+                bg=self.colors['background'],
+            )
+            label_player_title.pack()
 
-        frame_button_player = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_player.pack(padx=20, pady=20)
-        frame_button_player.grid_rowconfigure(0, weight=1)
-        frame_button_player.grid_columnconfigure(2, weight=1)
+            frame_button_player = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
+            frame_button_player.pack(padx=20, pady=20)
+            frame_button_player.grid_rowconfigure(0, weight=1)
+            frame_button_player.grid_columnconfigure(2, weight=1)
 
-        button_player2 = tk.Radiobutton(
-            frame_button_player,
-            text="j2",
-            variable=self.game_config['nbplayer'],
-            value=2
-        )
-        button_player3 = tk.Radiobutton(
-            frame_button_player,
-            text="j3",
-            variable=self.game_config['nbplayer'],
-            value=3
-        )
-        button_player4 = tk.Radiobutton(
-            frame_button_player,
-            text="j4",
-            variable=self.game_config['nbplayer'],
-            value=4
-        )
-        button_player2.grid(row=0, column=0)
-        button_player3.grid(row=0, column=1)
-        button_player4.grid(row=0, column=2)
+            button_player2 = tk.Radiobutton(
+                frame_button_player,
+                text="j2",
+                variable=self.game_config['nbplayer'],
+                value=2
+            )
+            button_player3 = tk.Radiobutton(
+                frame_button_player,
+                text="j3",
+                variable=self.game_config['nbplayer'],
+                value=3
+            )
+            button_player4 = tk.Radiobutton(
+                frame_button_player,
+                text="j4",
+                variable=self.game_config['nbplayer'],
+                value=4
+            )
+            button_player2.grid(row=0, column=0)
+            button_player3.grid(row=0, column=1)
+            button_player4.grid(row=0, column=2)
 
         label_gamemode_title = tk.Label(
             frame,
@@ -474,6 +488,10 @@ class Menu:
         frame.tkraise()
         self.game_config['connexionmode']='local'
 
+    def set_connexion_solo(self, frame):
+        frame.tkraise()
+        self.game_config['connexionmode'] = 'local'
+
     def set_connexion_multiplayer(self, frame):
         frame.tkraise()
         self.game_config['connexionmode']='multiplayer'
@@ -487,8 +505,13 @@ class Menu:
         """Configure la partie et ferme le menu pour lancer le jeu."""
         if board_orientation is None:
             board_orientation = [0, 0, 0, 0, 0, 0]
-        nbplayer = self.game_config['nbplayer']
-        self.game_config['nbplayer'] = nbplayer.get() if hasattr(nbplayer, 'get') else nbplayer
+        if gamemode == 'solobot':
+            self.game_config['nbplayer'] = 1
+        else:
+            nbplayer = self.game_config['nbplayer']
+            self.game_config['nbplayer'] = (
+                nbplayer.get() if hasattr(nbplayer, 'get') else nbplayer
+            )
         self.game_config['board_orientation'] = board_orientation
         self.game_config['gamemode'] = gamemode
         self.game_config['nbboard'] = nbboard
@@ -518,6 +541,8 @@ class Menu:
             self._board_position_return_frame.tkraise()
 
     def _finish_board_position(self, orientations):
+        if self._pending_nbboard == 4 and len(orientations) == 4:
+            orientations = [0, 0] + list(orientations)
         self._start_game(self._pending_gamemode, self._pending_nbboard, orientations)
 
 
@@ -529,18 +554,11 @@ class Menu:
     def create_local_custom(self):
         self._start_game('custom', self.game_config['nbboard'].get())
 
-        # Mode solo
-    def create_local_solo(self):
-        self.game_config['connexionmode'] ='local'
-        self.game_config['gamemode'] = 'solobot'
-        self.game_config['nbboard'] = 4
-        self.game_config['board_orientation'] = [0, 0, 0, 0, 0, 0]
-        self.game_config['iphost'] = 'None'
-        self.game_config['iptarget'] = 'None'
-        self.game_config['nbplayer'] = 1
+    def create_solo_classic(self):
+        self._show_board_position(self.frame_solo_mode, 'solobot', 4)
 
-        self.root.destroy()
-
+    def create_solo_custom(self):
+        self._start_game('solobot', self.game_config['nbboard'].get())
 
     # CONFIG MULTIJOUEUR (hôte)
     def create_multiplayer_classic(self):

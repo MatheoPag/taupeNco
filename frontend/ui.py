@@ -686,10 +686,16 @@ class Interface:
                         to_show = "replay"
 
                     case "passer_tour":
-                        text_title_subphase = (
-                            f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
-                            "Il a le droit de passer son tour."
-                        )
+                        if not self.game.has_pawns_on_board():
+                            text_title_subphase = (
+                                f"Le joueur {pnb} n'a plus de taupe sur le plateau.\n"
+                                "Il passe son tour."
+                            )
+                        else:
+                            text_title_subphase = (
+                                f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
+                                "Il a le droit de passer son tour."
+                            )
                         to_show = "can_pass"
 
                     case None:
@@ -734,7 +740,8 @@ class Interface:
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
-                    next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
+                    if self.game.has_pawns_on_board():
+                        next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
