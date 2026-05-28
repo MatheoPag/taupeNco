@@ -288,7 +288,7 @@ class Menu:
             bg=self.colors['layer0'],
             bd=0,
             relief='flat',
-            command=lambda: frame_multiplayer_game_mode.tkraise(),
+            command=lambda: self.frame_multiplayer_game_mode.tkraise(),
         )
         button_create.pack()
         
