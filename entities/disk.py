@@ -3,14 +3,22 @@ import random
 class Disks:
     def __init__(self, color: str) -> None:
         self.color = color
-        self.__disks = [
+        self.__disks = [ # 6 disques de 1 pour le dev
                 [1, False],
-                [2, False],
-                [2, False],
-                [3, False],
-                [3, False],
-                [4, False],
+                [1, False],
+                [1, False],
+                [1, False],
+                [1, False],
+                [1, False],
             ]
+        # self.__disks = [
+        #         [1, False],
+        #         [2, False],
+        #         [2, False],
+        #         [3, False],
+        #         [3, False],
+        #         [4, False],
+        #     ]
 
     def mix_disks(self) -> None:
         return random.shuffle(self.__disks)
