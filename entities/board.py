@@ -193,9 +193,43 @@ class BoardPile:
                 board_orientation: list[int]) -> None:
         self._markers_by_layer = [
             {
+                "X": [
+                        (2, -4), (3, -4),
+                        (-1, -3), (0, -3), (2, -3),
+                        (-1, -2), (0, -2), (2, -2),
+                        (-3, -1), (0, -1), (1, -1), (3, -1),
+                        (-4, 0), (-2, 0), (-1, 0), (0, 0), (1, 0), (3, 0),
+                        (2, 1),
+                        (-4, 2), (-1, 2), (1, 2),
+                        (-4, 3), (-2, 3), (1, 3),
+                        (-1, 4)
+                ],
+                "S": [],
+            },
+            {
+                "X": [
+                        (1, -4),
+                        (3, -3),
+                        (-2, -2), (1, -2),
+                        (-1, -1), (2, -1),
+                        (-3, 0), (2, 0), (4, 0),
+                        (-2, 1), (-1, 1),
+                        (-3, 2), (-2, 2), (0, 2), 
+                        (-3, 3), (-1, 3), (0, 3), (2, 2),
+                        (-2, 4)
+                    ],
+                "S": [
+                        (0, -4),
+                        (-3, 1),
+                        (1, 2),
+                        (-4, 4)
+                    ],
+                "J": [],
+            },
+            {
                 "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
                     (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
-                "S": [],
+                "S": [(0, -4), (4, -1), (-4, 1), (0, 4)],
                 "J": [],
             },
             {
@@ -228,9 +262,6 @@ class BoardPile:
                             )
                         )
         self.nb_boards = len(colors)
-        self.pop_top()
-        self.pop_top()
-        self.pop_top()
         
     def get_top(self) -> Board:
         return self.pile[0]
@@ -241,6 +272,9 @@ class BoardPile:
     def pop_top(self) -> bool:
         self.pile.pop(0)
         return True if len(self.pile) > 0 else False
+
+    def get_size(self) -> int:
+        return len(self.pile)
 
     def set_pile(self, pile: list) -> None:
         """
