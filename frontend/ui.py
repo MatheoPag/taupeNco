@@ -637,7 +637,7 @@ class Interface:
                 case "mouvement":
                     text_title_phase = "Allez à la couche inférieure !"
                 case "victoire": 
-                    text_title_phase = f"Le joueur {"victoire d'un joueur"} a trouvé la pelle !" # À ajuster quand joueur victoire ok
+                    text_title_phase = f"Le joueur {self.game.winner.name} a trouvé la pelle !"
                     to_show = "victory"
                 case _: 
                     text_title_phase = "⚠︎ Phase inconnue ⚠︎"
