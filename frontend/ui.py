@@ -133,7 +133,7 @@ class Interface:
         STEP_Y = self._center_STEP_Y
         for player in self.game.players:
             for pawn in player.pawns:
-                if pawn.position is None:
+                if pawn.state != "alive" or pawn.position is None:
                     continue
                 x = pad + pawn.position[1] * STEP_X
                 y = pad + pawn.position[0] * STEP_Y
@@ -328,6 +328,13 @@ class Interface:
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
 
+    def _reload_center_board(self):
+        """Detruit le plateau affiche pour le reconstruire apres un pop_top."""
+        for widget in self.frame_center.winfo_children():
+            widget.destroy()
+        self._board_canvas = None
+        self._canvas_circle = None
+
     def _is_local_turn(self) -> bool:
         return (
             self.role == "local"
@@ -424,7 +431,7 @@ class Interface:
 
             ''' Statut d'un joueur '''
             def player_status(p, y_carte):
-                pnb = int(p.name.split()[1]) # Traduit le nom en indice
+                pnb = p.id + 1 # Traduit le nom en indice
 
                 ''' Fond de la carte '''
                 canvas_left.create_rectangle(
@@ -523,6 +530,8 @@ class Interface:
 
     # WIDGET PARTIE CENTRE
     def center(self):
+        if self.game.consume_board_descent():
+            self._reload_center_board()
         if self._board_canvas is None:
             self._setup_center_board()
         self._redraw_center_pawns()
@@ -540,7 +549,7 @@ class Interface:
 
         # Récupération des infos du joueur
         player = self.game.players[self.game.current_player]
-        pnb = int(player.name.split()[1]) # Traduit le nom en indice
+        pnb = player.id + 1 # Traduit le nom en indice
 
         def draw_right(event):
             canvas_right.delete('all')

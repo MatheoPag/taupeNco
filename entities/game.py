@@ -46,6 +46,7 @@ class Game:
         self.bonus_move = False
         self.legal_moves = None
         self._pending_disk_sync = None
+        self._board_descended = False
 
         for p in self.players:
             p.disks.mix_disks()
@@ -128,6 +129,8 @@ class Game:
         if not self.is_legal_target_cell(row, col, phase):
             return False
         pawn.move(row, col)
+        if phase == "placement":
+            pawn.state = "alive"
         return True
 
     def try_place_current_pawn(self, row: int, col: int) -> bool:
@@ -230,6 +233,48 @@ class Game:
             if board.grid.get((q, r)) != "X":
                 return False
         return True
+
+    def are_all_holes_filled(self) -> bool:
+        """True si chaque trou (X) du plateau courant contient un pion."""
+        board = self.boards.get_top()
+        holes = [(q, r) for (q, r), value in board.grid.items() if value == "X"]
+        if not holes:
+            return False
+        for q, r in holes:
+            row, col = board.axial_to_2d(q, r)
+            if not self.cell_occupied_by_pawn(row, col):
+                return False
+        return True
+
+    def consume_board_descent(self) -> bool:
+        """True une fois apres un pop_top, puis remet le flag a False."""
+        if not self._board_descended:
+            return False
+        self._board_descended = False
+        return True
+
+    def check_board_descent(self) -> None:
+        """Verifie si tous les trous sont remplis et declenche la descente de plateau."""
+        if not self.are_all_holes_filled():
+            return
+        top = self.boards.get_top()
+        print(
+            f"Tous les trous du plateau « {top.name} » sont remplis : "
+            "descente au plateau inferieur."
+        )
+
+        for player in self.players:
+            for pawn in player.pawns:
+                if pawn.position is None:
+                    continue
+                row, col = pawn.position
+                q, r = top.from_2d_to_axial(row, col)
+                if not top.grid.get((q, r)) == "X":
+                    pawn.state = "dead"
+                    pawn.position = None
+
+        self.boards.pop_top()
+        self._board_descended = True
 
     def begin_player_turn(self) -> None:
         """Debut de tour : choix disque ou proposition de passer si tout est dans un trou."""
@@ -337,6 +382,7 @@ class Game:
                             "player_id": cur.id,
                             "disks": cur.disks.get_disks(),
                         }
+                self.check_board_descent()
                 return True
             print("le deplacement n'est pas valide car la case est \
                 occupee par un autre pion")

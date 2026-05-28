@@ -4,6 +4,7 @@ class Pawn:
         self.color = color
         self.position = (None)
         self.on_board = False
+        self.state = "unplaced" # unplaced, alive, dead
         self.moves_history = []
     
     def get_position(self) -> tuple[int, int] | None:
