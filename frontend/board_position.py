@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import os
 
 class Boards:
-    def __init__(self):
+    def __init__(self, parent=None, on_finish=None):
         # Palette de couleur
         self.colors = {
             # Main
@@ -43,20 +43,28 @@ class Boards:
         }
 
 
-        # Création de la fenêtre
-        self.root = tk.Tk()
-        self.root.title("Taupes&cie - Orientation des plateaux")
-        self.root.geometry("800x800")
-        self.root.minsize(800, 800)
-        self.root.maxsize(800, 800)
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.tk_setPalette(
-            background = self.colors['background'],
-            foreground = self.colors['black'],
-            activeBackground = self.colors['background'],
-            activeForeground = self.colors['black'],
-        )
+        self.on_finish = on_finish
+        self._standalone = parent is None
+
+        if self._standalone:
+            # Création de la fenêtre
+            self.root = tk.Tk()
+            self.root.title("Taupes&cie - Orientation des plateaux")
+            self.root.geometry("800x800")
+            self.root.minsize(800, 800)
+            self.root.maxsize(800, 800)
+            self.root.grid_rowconfigure(0, weight=1)
+            self.root.grid_columnconfigure(0, weight=1)
+            self.root.tk_setPalette(
+                background = self.colors['background'],
+                foreground = self.colors['black'],
+                activeBackground = self.colors['background'],
+                activeForeground = self.colors['black'],
+            )
+            container = self.root
+        else:
+            self.root = parent.winfo_toplevel()
+            container = parent
 
         # Création du dictionnaire pour la configuration du mode de jeu
         self.position_config = {
@@ -69,16 +77,19 @@ class Boards:
         self.stock_images = {}
 
         # Création des pages
-        self._build_wigets()
+        self._build_wigets(container)
         
 
 
 
-    def _build_wigets(self):
+    def _build_wigets(self, container):
 
         ''' FOND DE L'INTERFACE '''
-        self.frame_main = tk.Frame(self.root, bg=self.colors['background'])
+        self.frame_main = tk.Frame(container, bg=self.colors['background'])
         self.frame_main.grid(row=0, column=0, sticky='nsew')
+        if not self._standalone:
+            container.grid_rowconfigure(0, weight=1)
+            container.grid_columnconfigure(0, weight=1)
             # Lignes
         self.frame_main.grid_rowconfigure(0, weight=1)
         self.frame_main.grid_rowconfigure(1, weight=5)
@@ -142,9 +153,24 @@ class Boards:
             bg=self.colors['green'],
             bd=0,
             relief='flat',
-            command=self.root.destroy
+            command=self._finish
         )
         button_start.grid(row=1, column=1, sticky='nsew', padx=100)
+
+    def get_board_orientation(self) -> list[int]:
+        return [
+            self.position_config['layer0'],
+            self.position_config['layer1'],
+            self.position_config['layer2'],
+            self.position_config['layer3'],
+        ]
+
+    def _finish(self):
+        orientations = self.get_board_orientation()
+        if self.on_finish is not None:
+            self.on_finish(orientations)
+        else:
+            self.root.destroy()
 
 
     # Gestion de l'orientation d'un plateau
@@ -152,7 +178,6 @@ class Boards:
         # Permet de retrouver l'image, peu importe le cwd (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
         cwd = os.path.dirname(__file__)
         png_path = os.path.join(cwd, "ressources/pictures/hexa-test.png")
-        # print(f"\n{png_path}\n") # debug
 
         png = { # Change la couleur du png en fonction de la couche
             0 : png_path,
@@ -214,10 +239,10 @@ class Boards:
         
     # Affichage des pages
     def display(self):
-        self.root.mainloop()
+        if self._standalone:
+            self.root.mainloop()
 
-        print(self.position_config) # debug
-        return self.position_config
+        return self.get_board_orientation()
 
 
 if __name__ == "__main__":

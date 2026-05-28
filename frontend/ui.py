@@ -1,6 +1,7 @@
 # Librairie
 import tkinter as tk
 import time
+import os
 from entities import bot as bot_ai
 
 class Interface:
@@ -27,6 +28,10 @@ class Interface:
             'black' : '#000000',
 
             # Plateau
+            'layer101' : '#6B7280',
+            'layer101c' : '#B1B8C4',
+            'layer102' : '#795640',
+            'layer102c' : '#C39A7E',
             'layer0' : '#4E7F6E',
             'layer0c' : '#8DCAAA',
             'layer1' : '#B85553',
@@ -100,6 +105,7 @@ class Interface:
     def update_ui(self):
         print(f"Current phase : {self.game.phase}")
         print(f"Current sub phase : {self.game.sub_phase}")
+        self.left()
         self.center()
         self.right()
         self._schedule_bot_turn()
@@ -254,6 +260,12 @@ class Interface:
                 return
             row, col, _ = coords
 
+            if (
+                self.game.phase == "mouvement"
+                and self.game.sub_phase in ("rejouer", "passer_tour")
+            ):
+                return
+
             # MULTIJOUEUR
             if self.role != "local":
                 # on n'agit que si c'est notre tour
@@ -316,6 +328,198 @@ class Interface:
 
         self._board_canvas.bind('<Button-1>', gerer_clic)
 
+    def _is_local_turn(self) -> bool:
+        return (
+            self.role == "local"
+            or self.game.current_player == self.local_player_id
+        )
+
+    def _send_network_action(self, action: dict) -> None:
+        if self.role == "host":
+            self.network.send_data(action)
+        elif self.role == "client":
+            self.network.send_action(action)
+
+    def change_player_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "next_player"})
+            return
+        self.game.bonus_move = False
+        self.game.current_player = (
+            (self.game.current_player + 1) % len(self.game.players)
+        )
+        self.game.begin_player_turn()
+        if self.role == "host":
+            self._send_network_action({"type": "next_player"})
+        self.update_ui()
+
+    def replay_turn_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "replay_turn"})
+            return
+        self.game.start_bonus_turn()
+        if self.role == "host":
+            self._send_network_action({"type": "replay_turn"})
+        self.update_ui()
+
+    def play_turn_and_update(self):
+        if not self._is_local_turn():
+            return
+        if self.role == "client":
+            self._send_network_action({"type": "play_turn"})
+            return
+        self.game.sub_phase = "choix_disque"
+        if self.role == "host":
+            self._send_network_action({"type": "play_turn"})
+        self.update_ui()
+
+
+    # WIDGET PARTIE GAUCHE
+    def left(self):
+        # Évite la superpositon des widgets à chaque tour
+        for w in self.frame_left.winfo_children():
+            w.destroy()
+
+        canvas_left = tk.Canvas(
+            self.frame_left, bg=self.frame_left['bg'], highlightthickness=0, width=0, height=0
+        )
+        canvas_left.pack(fill='both', expand=True)
+
+        # Récupération des infos d'un joueur
+        def player(indice):
+            return self.game.players[indice]
+
+        def draw_left(event):
+            # Évite l'accumulation de widgets à chaque redimensionnement
+            canvas_left.delete('all')
+            for w in canvas_left.winfo_children():
+                w.destroy()
+
+            w = event.width
+            h = event.height
+
+            # Titre de la manche
+            if self.game.phase == 'placement':
+                round_title = "Mise en place"
+            else:
+                round_title = f"Manche {self.game.colors[0][0] + 1}" # Attention risque de casser en mode custom
+
+            label_round_title = tk.Label(
+                canvas_left,
+                text=round_title,
+                font=('', 20, 'bold'),
+                bg=self.colors['background']
+            )
+            label_round_title.place(relx=0.5, y=10, anchor='n')
+
+            # Dimensions des cartes
+            marge = 10
+            titre_h = 50
+            carte_w = w - 2 * marge
+            carte_h = 150
+
+            ''' Statut d'un joueur '''
+            def player_status(p, y_carte):
+                pnb = int(p.name.split()[1]) # Traduit le nom en indice
+
+                ''' Fond de la carte '''
+                canvas_left.create_rectangle(
+                    marge, y_carte,
+                    marge + carte_w, y_carte + carte_h,
+                    fill=self.colors[f'player{pnb}c'],
+                    outline=self.colors['border'],
+                    width=2
+                )
+
+                # Nom du joueur
+                label_name = tk.Label(
+                    canvas_left,
+                    text=f"Joueur {pnb}",
+                    font=('', 14),
+                    bg=self.colors[f'player{pnb}c']
+                )
+                label_name.place(
+                    x=marge + carte_w / 2,
+                    y=y_carte + 8,
+                    anchor='n'
+                )
+
+                ''' Pions restants '''
+                frame_pawns = tk.Frame(canvas_left, bg=self.colors[f'player{pnb}c'])
+
+                # Permet de retrouver l'image, peu importe le cwd (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
+                cwd = os.path.dirname(__file__)
+                png_path = os.path.join(cwd, "ressources/icons/mole.png")
+
+                # Ajuste la taille de l'icon en fonction du nombre de taupes (soit en fonction du nombre de joueur)
+                ''' À ajuster '''
+                match len(self.game.players):
+                    case 1 : # mode solo
+                        dpxb = 40  
+                    case 2 : 
+                        dpxb = 40
+                    case 3 : 
+                        dpxb = 20
+                    case 4 : 
+                        dpxb = 16
+
+                for pawn in p.pawns:
+                    img = tk.PhotoImage(file=png_path).subsample(dpxb)
+                    lbl_pawn = tk.Label(frame_pawns, image=img, bg=self.colors[f'player{pnb}c'])
+                    lbl_pawn.image = img # Empêche le garbage collector de supprimer l'image
+                    lbl_pawn.pack(side='left', padx=2)
+
+                frame_pawns.place(
+                    x=marge + carte_w / 2,
+                    y=y_carte + 35,
+                    anchor='n'
+                )
+
+                ''' Jetons déjà dévoilés (sur une seule ligne) '''
+                frame_disks = tk.Frame(canvas_left, bg=self.colors[f'player{pnb}c'])
+
+                diametre = 35
+                data = p.disks.get_disks()
+
+                for valeur, visible in data:
+                    coin = tk.Canvas(
+                        frame_disks,
+                        width=diametre, height=diametre,
+                        bg=self.colors[f'player{pnb}c'],
+                        bd=0, highlightthickness=0
+                    )
+                    coin.create_oval(
+                        0, 0, diametre, diametre,
+                        fill=self.colors[f'player{pnb}'],
+                        outline=self.colors['border'],
+                        width=1
+                    )
+                    # Valeur si déjà dévoilé, sinon point d'interrogation (même principe que dans right())
+                    texte = str(valeur) if visible else "?"
+                    coin.create_text(
+                        diametre / 2, diametre / 2,
+                        text=texte,
+                        font=('', 13),
+                        fill=self.colors['white']
+                    )
+                    coin.pack(side='left', padx=3)
+
+                frame_disks.place(
+                    x=marge + carte_w / 2,
+                    y=y_carte + carte_h - 8,
+                    anchor='s'
+                )
+
+            ''' Affichage des statuts des joueurs '''
+            for i in range(len(self.game.players)):
+                y = titre_h + marge + i * (carte_h + marge)
+                player_status(player(i), y)
+
+        canvas_left.bind('<Configure>', draw_left)
 
     # WIDGET PARTIE CENTRE
     def center(self):
@@ -376,16 +580,6 @@ class Interface:
             # Initialisation
             to_show = None
 
-            ''' Debug '''
-            def joueur_bloque():
-                
-                return #fonction
-            def joueur_rejoue():
-                return False
-            def pions_dans_tout_trous():
-                return False
-            ''' ~~~~~ '''
-
             # Titre (phase du jeu)
             match self.game.phase :
                 case "placement":
@@ -428,24 +622,31 @@ class Interface:
                         if self.game.is_player_blocked() :
                             text_title_subphase = f"Joueur {pnb} ne peut déplacer aucune taupe.\nIl passe son tour."
                             to_show = "blocked"
+                            self.game.sub_phase = "choix_disque"
 
                     case "deplacement": 
                         text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
                         to_show = "move"
+
+                    case "rejouer":
+                        text_title_subphase = (
+                            f"La taupe du joueur {pnb} est sur une case spéciale.\n"
+                            "Il peut rejouer un coup."
+                        )
+                        to_show = "replay"
+
+                    case "passer_tour":
+                        text_title_subphase = (
+                            f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
+                            "Il a le droit de passer son tour."
+                        )
+                        to_show = "can_pass"
 
                     case None:
                         text_title_subphase = "Debug : subphase = None" # debug (plus tard : faire en sorte que rien n'apparaissent)
 
                     case _: 
                         text_title_subphase = "⚠︎ Subphase inconnue ⚠︎" 
-
-                    #     case joueur_rejoue() : # à adapter
-                    #     text_title_subphase = f"La taupe du joueur {pnb} est sur une case spéciale.\nIl peut rejouer un coup."
-                    #     to_show = "replay"
-
-                    # case pions_dans_tout_trous() : # à adapter
-                    #     text_title_subphase = f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\nIl a le droit passer son tour."
-                    #     to_show = "can_pass"
             
             label_title_subphase = tk.Label(
                 self.frame_right,
@@ -471,7 +672,7 @@ class Interface:
 
                 # Bouton suivant
                 case "blocked" :
-                    next_button(canvas_right, "Suivant", "",  "e")
+                    next_button(canvas_right, "Suivant", self.change_player_and_update,  "e")
 
                 # Affiche le jeton de déplacement
                 case "move" :
@@ -479,12 +680,12 @@ class Interface:
 
                 # Joueur choisit si (re)joue ou pas
                 case "replay" :
-                    next_button(canvas_right, "Rejouer", "",  "w")
-                    next_button(canvas_right, "Passer", False,  "e")
+                    next_button(canvas_right, "Rejouer", self.replay_turn_and_update,  "w")
+                    next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
-                    next_button(canvas_right, "Jouer", "",  "w")
-                    next_button(canvas_right, "Passer", "",  "e")
+                    next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
+                    next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
                 case "victory":
@@ -665,9 +866,15 @@ class Interface:
         if action_type == "place_pawn":
             self.game.try_place_current_pawn(msg["row"], msg["col"])
         elif action_type == "next_player":
+            self.game.bonus_move = False
             self.game.current_player = (
                 (self.game.current_player + 1) % len(self.game.players)
             )
+            self.game.begin_player_turn()
+        elif action_type == "replay_turn":
+            self.game.start_bonus_turn()
+        elif action_type == "play_turn":
+            self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
             self.game.try_choose_disk(msg["disk_selected"], self.update_ui)
         elif action_type == "choose_pawn":
@@ -689,5 +896,3 @@ class Interface:
     # Affichage de l'interface du jeu
     def displayInterface(self):
         self.root.mainloop()
-
-

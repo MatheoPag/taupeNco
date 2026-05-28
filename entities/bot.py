@@ -51,6 +51,10 @@ def play_movement(game) -> bool:
     if not game.try_choose_pawn(pr, pc):
         game.sub_phase = "choix_disque"
         return False
+    if game.is_player_blocked():
+        game.current_player = (game.current_player + 1) % len(game.players)
+        game.begin_player_turn()
+        return True
     return game.try_move_chosen_pawn_to(row, col)
 
 
@@ -61,5 +65,12 @@ def play_turn(game) -> bool:
     if game.phase == "placement":
         return play_placement(game)
     if game.phase == "mouvement":
+        if game.sub_phase == "rejouer":
+            game.start_bonus_turn()
+            return play_movement(game)
+        if game.sub_phase == "passer_tour":
+            game.current_player = (game.current_player + 1) % len(game.players)
+            game.begin_player_turn()
+            return True
         return play_movement(game)
     return False
