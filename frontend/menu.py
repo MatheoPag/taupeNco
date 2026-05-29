@@ -1,6 +1,7 @@
 # Librairie
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
 import pygame
 from system.server import get_local_ip
 from frontend.board_position import Boards
@@ -63,6 +64,7 @@ class Menu:
 
         # Création du dictionnaire pour la configuration du mode de jeu
         self.game_config = {
+            'save' : None,
             'connexionmode' : None, # local OU multiplayer
             'gamemode' : None, # classic, solobot OU custom
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
@@ -171,7 +173,21 @@ class Menu:
         )
         button_online.pack(fill='both', expand=True)
 
-            # 4 - Quitter le jeu
+            # 4 - Quitter le jeu / import sauvegarde
+        frame_button_import = tk.Frame(
+            frame_buttons, bg=self.colors['border'], padx=2, pady=2
+        )
+        frame_button_import.pack(padx=70, pady=0, fill='x', expand=True)
+        button_import = tk.Button(
+            frame_button_import,
+            text="Continuer une partie",
+            font=('', 16),
+            bg=self.colors['green'],
+            bd=0,
+            relief='flat',
+        )
+        button_import.pack(fill='both', expand=True)
+
         frame_button_quit = tk.Frame(
             frame_buttons, bg=self.colors['border'], padx=2, pady=2
         )
@@ -324,6 +340,21 @@ class Menu:
         button_online.config(
             command=lambda : self.set_connexion_multiplayer(frame_multiplayer_mode)
         )
+
+            # Permet l'import d'une sauvegarde
+        def import_save():
+            self.game_config['save'] = filedialog.askopenfilename(
+                title="Choisissez une sauvegarde",
+                
+                filetypes=[
+                    ("Fichiers exécutables", "*.tandc") # à modifier en fonction du type fichier
+                ]
+            )
+            print(self.game_config['save']) #debug
+
+        button_import.config(command=import_save)
+
+            # Quitte le jeu
         button_quit.config(command=self.root.destroy)
         
             # Boutons de la page configuration d'une partie (local)
