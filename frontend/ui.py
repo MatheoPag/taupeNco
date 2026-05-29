@@ -262,11 +262,8 @@ class Interface:
                                     fill=size,
                                     outline='',
                                 )
-                                
-                                
-            
 
-        
+            self._redraw_center_pawns()
 
         self._center_rows = 9
         self._center_columns = 17
@@ -460,7 +457,7 @@ class Interface:
             if self.game.phase == 'placement':
                 round_title = "Mise en place"
             else:
-                round_title = f"Manche {self.game.colors[0][0] + 1}" # Attention risque de casser en mode custom
+                round_title = self.game.boards.get_top().name # Attention risque de casser en mode custom
 
             label_round_title = tk.Label(
                 canvas_left,
@@ -577,11 +574,15 @@ class Interface:
 
     # WIDGET PARTIE CENTRE
     def center(self):
+        board_rebuilt = False
         if self.game.consume_board_descent():
             self._reload_center_board()
+            board_rebuilt = True
         if self._board_canvas is None:
             self._setup_center_board()
-        self._redraw_center_pawns()
+            board_rebuilt = True
+        if not board_rebuilt:
+            self._redraw_center_pawns()
 
     # WIDGET PARTIE DROITE
     def right(self):
@@ -680,8 +681,16 @@ class Interface:
                             to_show = "blocked"
                             self.game.sub_phase = "choix_disque"
 
-                    case "deplacement": 
-                        text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
+                    case "deplacement":
+                        disk_value = player.disks.get_disks()[player.disk_selected][0]
+                        if disk_value == 0:
+                            text_title_subphase = (
+                                f"Le joueur {pnb} passe son tour (disque 0)."
+                            )
+                        else:
+                            text_title_subphase = (
+                                f"Cette taupe se déplace de {disk_value} case(s)."
+                            )
                         to_show = "move"
 
                     case "rejouer":
@@ -692,10 +701,16 @@ class Interface:
                         to_show = "replay"
 
                     case "passer_tour":
-                        text_title_subphase = (
-                            f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
-                            "Il a le droit de passer son tour."
-                        )
+                        if not self.game.has_pawns_on_board():
+                            text_title_subphase = (
+                                f"Le joueur {pnb} n'a plus de taupe sur le plateau.\n"
+                                "Il passe son tour."
+                            )
+                        else:
+                            text_title_subphase = (
+                                f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
+                                "Il a le droit de passer son tour."
+                            )
                         to_show = "can_pass"
 
                     case None:
@@ -740,7 +755,8 @@ class Interface:
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
-                    next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
+                    if self.game.has_pawns_on_board():
+                        next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
@@ -940,11 +956,14 @@ class Interface:
             )
             return
 
-        if self.game.try_choose_disk(idx, self.update_ui):
+        if self.game.try_choose_disk(
+            idx, self.update_ui, shuffle_disks=self._is_disk_shuffle_authority()
+        ):
             if self.role == "host":
                 self.network.send_data(
                     {"type": "choose_disk", "disk_selected": idx}
                 )
+            self._send_disk_sync_if_needed()
 
     def _send_disk_sync_if_needed(self) -> None:
         payload = self.game.consume_disk_sync()
@@ -972,7 +991,12 @@ class Interface:
         elif action_type == "play_turn":
             self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
-            self.game.try_choose_disk(msg["disk_selected"], self.update_ui)
+            if self.game.try_choose_disk(
+                msg["disk_selected"],
+                self.update_ui,
+                shuffle_disks=self._is_disk_shuffle_authority(),
+            ):
+                self._send_disk_sync_if_needed()
         elif action_type == "choose_pawn":
             self.game.try_choose_pawn(msg["row"], msg["col"])
         elif action_type == "move_chosen_pawn_to":

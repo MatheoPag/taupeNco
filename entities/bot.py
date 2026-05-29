@@ -69,6 +69,14 @@ def play_replay_turn(game) -> bool:
     return play_movement(game)
 
 
+def _zero_disk_options(game) -> list[int]:
+    """Indices des disques 0 encore faces cachees."""
+    cur = game.players[game.current_player]
+    return [
+        i for i, d in enumerate(cur.disks.get_disks()) if not d[1] and d[0] == 0
+    ]
+
+
 def play_movement(game) -> bool:
     if game.is_all_pawns_in_holes():
         game.current_player = (game.current_player + 1) % len(game.players)
@@ -77,7 +85,11 @@ def play_movement(game) -> bool:
 
     options = _movement_options(game)
     if not options:
-        return False
+        zero_disks = _zero_disk_options(game)
+        if not zero_disks:
+            return False
+        game.sub_phase = "choix_disque"
+        return game.try_choose_disk(random.choice(zero_disks), lambda: None)
 
     disk_idx, pawn_idx, (row, col) = random.choice(options)
     pawn = game.players[game.current_player].pawns[pawn_idx]

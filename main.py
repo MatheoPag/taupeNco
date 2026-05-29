@@ -7,23 +7,23 @@ from system.server import GameServer
 from system.client import GameClient
 
 
-def start_local(nbplayer, bot=False, board_orientation=None):
+def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
     if board_orientation is None:
-        board_orientation = [0, 0, 0, 0]
-    game_instance = game_entity.Game(nbplayer, 1 if bot else 0, board_orientation)
+        board_orientation = [0, 0, 0, 0, 0, 0]
+    game_instance = game_entity.Game(nbplayer, 1 if bot else 0, nb_boards, board_orientation)
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
 
 
-def start_host(nbplayer, host_ip, board_orientation=None):
+def start_host(nbplayer, host_ip, nb_boards=4, board_orientation=None):
     if board_orientation is None:
-        board_orientation = [0, 0, 0, 0]
+        board_orientation = [0, 0, 0, 0, 0, 0]
     print(f"Partie hébergée - IP à partager : {host_ip}:5555")
     game_server = GameServer(max_player=nbplayer, host="0.0.0.0", port=5555)
     game_server.start()
 
     print("Initialisation de la partie...")
-    game_instance = game_entity.Game(nbplayer, 0, board_orientation)
+    game_instance = game_entity.Game(nbplayer, 0, nb_boards, board_orientation)
 
     game_ui = ui.Interface(
         game_instance,
@@ -40,6 +40,7 @@ def start_host(nbplayer, host_ip, board_orientation=None):
     game_server.send_data({
         "type": "game_start",
         "nbplayer": nbplayer,
+        "nbboard": nb_boards,
         "current_player": game_instance.current_player,
         "players_disks": game_instance.get_players_disks_state(),
         "board_orientation": board_orientation,
@@ -86,7 +87,8 @@ def start_client(target_ip):
     game_instance = game_entity.Game(
         data["nbplayer"],
         0,
-        data.get("board_orientation", [0, 0, 0, 0]),
+        data.get("nbboard", 4),
+        data.get("board_orientation", [0, 0, 0, 0, 0, 0]),
     )
     game_instance.current_player = data["current_player"]
     if "players_disks" in data:
@@ -106,21 +108,23 @@ def main():
     game_config = game_menu.display()
     print(game_config)
 
-    board_orientation = game_config.get("board_orientation", [0, 0, 0, 0])
+    board_orientation = game_config.get("board_orientation", [0, 0, 0, 0, 0, 0])
 
     if game_config["connexionmode"] == "local":
-        if game_config["gamemode"] == "classic":
+        if game_config["gamemode"] == "classic" or game_config["gamemode"] == "custom":
             if game_config['nbplayer'] > 1:
                 start_local(
                     game_config["nbplayer"],
                     bot=False,
-                    board_orientation=board_orientation,
+                    nb_boards=game_config["nbboard"],
+                    board_orientation=board_orientation
                 )
         if game_config['nbplayer'] == 1 and game_config["gamemode"] == "solobot":
             start_local(
                 game_config["nbplayer"],
                 bot=True,
-                board_orientation=board_orientation,
+                nb_boards=game_config["nbboard"],
+                board_orientation=board_orientation
             )
 
     elif game_config["connexionmode"] == "multiplayer":
@@ -128,7 +132,8 @@ def main():
             start_host(
                 game_config["nbplayer"],
                 game_config["iphost"],
-                board_orientation=board_orientation,
+                nb_boards=game_config["nbboard"],
+                board_orientation=board_orientation
             )
         elif game_config["iptarget"] != "None":
             start_client(game_config["iptarget"])

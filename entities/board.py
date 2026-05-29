@@ -3,7 +3,7 @@ import copy
 class Board:
     def __init__(self, 
                 size: int, 
-                color: tuple[int, str], 
+                color: str | tuple[int, str], 
                 markers: dict[str, list[tuple[int, int]]], 
                 orientation: int) -> None:
         if size % 2 == 0:
@@ -12,8 +12,23 @@ class Board:
             raise ValueError("La taille doit etre strictement positive")
         self.size = size
         self.radius = size // 2
-        self.color_int = color[0]
-        self.name = color[1]
+
+
+        LAYER_UI_INDEX = {
+            "Terre": 102,
+            "Pierre": 101,
+            "Surface": 0,
+            "Terre arable": 1,
+            "Sous-sol": 2,
+            "Roche mère": 3,
+        }
+
+        if isinstance(color, str):
+            self.name = color
+            self.color_int = LAYER_UI_INDEX[color]
+        else:
+            self.color_int = color[0]
+            self.name = color[1]
         self.grid = self._generate_grid()
         self.center = (0, 0)
         self.markers = markers
@@ -188,49 +203,97 @@ class Board:
 
 class BoardPile:
     def __init__(self, 
-                colors:list[tuple[int, str]], 
                 size: int,
-                board_orientation: list[int]) -> None:
-        self._markers_by_layer = [
-            {
-                "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
-                    (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
+                board_orientation: list[int], 
+                nb_boards: int) -> None:
+        self._markers_by_layer = {
+            "Terre" : {
+                "X": [
+                        (2, -4), (3, -4),
+                        (-1, -3), (0, -3), (2, -3),
+                        (-1, -2), (0, -2), (2, -2),
+                        (-3, -1), (0, -1), (1, -1), (3, -1),
+                        (-4, 0), (-2, 0), (-1, 0), (0, 0), (1, 0), (3, 0),
+                        (2, 1),
+                        (-4, 2), (-1, 2), (1, 2),
+                        (-4, 3), (-2, 3), (1, 3),
+                        (-1, 4)
+                ],
                 "S": [],
+            },
+            "Pierre" : {
+                "X": [
+                        (4, -4),
+                        (1, -3), (3, -3), (4, -3),
+                        (-2, -2), (1, -2),
+                        (4, -1),
+                        (-3, 0), (2, 0), (4, 0),
+                        (-1, 1), (0, 1),
+                        (-3, 2), (-2, 2),
+                        (-3, 3), (-1, 3), (0, 3),
+                        (-2, 4)
+                    ],
+                "S": [
+                        (0, -4),
+                        (-3, 1), (1, 1),
+                        (-4, 4)
+                    ],
                 "J": [],
             },
-            {
+            "Surface" : {
+                "X": [(1, -4), (3, -4), (4, -2), (-3, -1), (-1, -1), (2, -1),
+                    (0, 0), (-2, 1), (1, 1), (0, 2), (2, 2), (-4, 3), (-3, 4)],
+                "S": [(0, -4), (4, -1), (-4, 1), (0, 4)],
+                "J": [],
+            },
+            "Terre arable" : {
                 "X": [(0, -4), (2, -3), (-1, -2), (3, -1), (-4, 4), (0, 3), (-2, 3), (-3, 1)],
                 "S": [(3, -3), (-4, 0), (1, 0), (0, 4)],
                 "J": [],
             },
-            {
+            "Sous-sol" : {
                 "X": [(1, -2), (-4, 0), (4, 0), (-2, 4)],
                 "S": [(2, -4), (-4, 1), (0, 1), (2, 2)],
                 "J": [],
             },
-            {
+            "Roche mère" : {
                 "X": [(0, 0)],
                 "S": [(4, -4), (-1, -2), (1, 2), (-4, 4)],
                 "J": [(0, -1), (1, 0), (-1, 1)]
             },
-        ]
+        }
 
         self.pile = []
-        for i, color in enumerate(colors):
-            layer_id = color[0]
-            layer_markers = copy.deepcopy(self._markers_by_layer[layer_id])
+
+        LAYER_ORDER = [
+            "Terre",
+            "Pierre",
+            "Surface",
+            "Terre arable",
+            "Sous-sol",
+            "Roche mère",
+        ]
+
+        start = len(LAYER_ORDER) - nb_boards
+        for offset, layer_name in enumerate(LAYER_ORDER[start:]):
+            layer_markers = copy.deepcopy(self._markers_by_layer[layer_name])
+            if offset == 0:
+                layer_markers["S"] = []
+            layer_index = start + offset
+            orientation = (
+                board_orientation[layer_index]
+                if layer_index < len(board_orientation)
+                else 0
+            )
             self.pile.append(
-                        Board(
-                            size=size, 
-                            color=color, 
-                            markers=layer_markers, 
-                            orientation=board_orientation[i]
-                            )
-                        )
-        self.nb_boards = len(colors)
-        self.pop_top()
-        self.pop_top()
-        self.pop_top()
+                Board(
+                    size=size,
+                    color=layer_name,
+                    markers=layer_markers,
+                    orientation=orientation,
+                )
+            )
+        self.nb_boards = nb_boards
         
     def get_top(self) -> Board:
         return self.pile[0]
@@ -241,6 +304,9 @@ class BoardPile:
     def pop_top(self) -> bool:
         self.pile.pop(0)
         return True if len(self.pile) > 0 else False
+
+    def get_size(self) -> int:
+        return len(self.pile)
 
     def set_pile(self, pile: list) -> None:
         """
