@@ -155,17 +155,24 @@ class Interface:
             highlightthickness=0,
         )
         self._canvas_circle = canvas_circle
-        canvas_circle.pack(fill='both', expand=True)
+        
         self._current_board_color = color
+
+        layer_name = self.game.boards.get_top().name
+        label_layer = tk.Label(self.frame_center, text=layer_name,bg=self.colors['background'],font=('18'))
+        label_layer.pack(side='bottom', pady=90)
+        canvas_circle.pack(fill='both', expand=True)
+
+
 
         def draw(event):
             self._canvas_circle.delete('all')
             w = event.width
             h = event.height
 
-            cx = w // 2 # NE PAS TOUCHER
-            cy = h // 2 - 70 # NE PAS TOUCHER
-            r = min(w, h) // 2.5  # NE PAS TOUCHER
+            cx = w // 2 
+            cy = h // 2  
+            r = min(w, h) // 2  
             STEP_X = int(r * 1.8 / (self._center_columns - 1))
             STEP_Y = int(r * 0.9 / (self._center_rows - 1)) * 1.7
             self._center_STEP_X = STEP_X
