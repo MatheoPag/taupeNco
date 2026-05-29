@@ -196,7 +196,7 @@ class Game:
             self.sub_phase = "choix_disque"
         if self.sub_phase == "passer_tour":
             return False
-        if not self.has_pawns_on_board():
+        if not self.has_pawns_on_board(self.players[self.current_player]):
             return False
         if self.sub_phase == "choix_disque":
             print("choix du disque")
@@ -228,10 +228,14 @@ class Game:
             player_pawns = current_player.pawns
             pawn_found = None
             for idx, pawn in enumerate(player_pawns):
-                if pawn.position is not None:
-                    if pawn.position[0] == row and pawn.position[1] == col:
-                        pawn_found = (pawn, idx)
-                        break
+                if (
+                    pawn.state == "alive"
+                    and pawn.position is not None
+                    and pawn.position[0] == row
+                    and pawn.position[1] == col
+                ):
+                    pawn_found = (pawn, idx)
+                    break
             if not pawn_found:
                 print("Le pion selectionne n'appartient pas au joueur courant.")
                 return False
@@ -246,17 +250,20 @@ class Game:
 
     def is_player_blocked(self) -> bool:
         cur = self.players[self.current_player]
-        pawn_blocked = 0
-        for i in range(len(cur.pawns)):
-            if len(self.possible_moves(i, cur.disk_selected)) == 0:
-                pawn_blocked += 1
-        if pawn_blocked == len(cur.pawns):
-            return True
+        movable = [
+            i
+            for i, p in enumerate(cur.pawns)
+            if p.state == "alive" and p.position is not None
+        ]
+        if not movable:
+            return False
+        return all(
+            len(self.possible_moves(i, cur.disk_selected)) == 0 for i in movable
+        )
 
-    def has_pawns_on_board(self) -> bool:
+    def has_pawns_on_board(self, p) -> bool:
         """True si le joueur courant a au moins un pion non elimine."""
-        cur = self.players[self.current_player]
-        return any(p.state != "dead" for p in cur.pawns)
+        return any(pawn.state != "dead" for pawn in  p.pawns)
 
     def is_all_pawns_in_holes(self) -> bool:
         """True si toutes les taupes posees du joueur courant sont sur un trou (X)."""
@@ -352,9 +359,21 @@ class Game:
         self.boards.pop_top()
         self._board_descended = True
 
+    def _skip_eliminated_players(self) -> None:
+        """Avance jusqu'au prochain joueur ayant au moins une taupe non eliminee."""
+        n = len(self.players)
+        start = self.current_player
+        while not self.has_pawns_on_board(self.players[self.current_player]):
+            self.current_player = (self.current_player + 1) % n
+            if self.current_player == start:
+                break
+
     def begin_player_turn(self) -> None:
         """Debut de tour : choix disque ou proposition de passer si ineligible."""
-        if not self.has_pawns_on_board() or self.is_all_pawns_in_holes():
+        self._skip_eliminated_players()
+        if not self.has_pawns_on_board(self.players[self.current_player]):
+            self.sub_phase = "passer_tour"
+        elif self.is_all_pawns_in_holes():
             self.sub_phase = "passer_tour"
         else:
             self.sub_phase = "choix_disque"
