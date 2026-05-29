@@ -78,18 +78,20 @@ class Menu:
         self._board_position_return_frame = None
 
         # Lancement de la musique du menu
-        #self.play_music()
+        self.play_music()
 
         # Création des pages
         self._build_pages()
     
     # Musique du menu
     def play_music(self):
-        song = pygame.mixer.music
-        song.init()
-        song.load("frontend/ressources/musics/Overture_Super-Mario-Galaxy.mp3")
-        song.play(-1)
-
+        pygame.mixer.init()
+        pygame.mixer.music.load("frontend/ressources/musics/musique.mp3")
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.1)
+        
+    def stop_music(self):
+        pygame.mixer.music.stop()
 
     # Construction des pages
     def _build_pages(self):

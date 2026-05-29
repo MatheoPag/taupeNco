@@ -106,6 +106,7 @@ def start_client(target_ip):
 def main():
     game_menu = menu.Menu()
     game_config = game_menu.display()
+    game_menu.stop_music()
     print(game_config)
 
     board_orientation = game_config.get("board_orientation", [0, 0, 0, 0, 0, 0])
