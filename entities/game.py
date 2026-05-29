@@ -36,6 +36,7 @@ class Game:
                 for i in range(nb_bots)
             ]
         )
+        self.nb_boards = nb_boards
         self.disk_selected = None
         self.pawn_selected = None
         self.players = [
@@ -43,7 +44,8 @@ class Game:
                 i, 
                 players[i]["name"], 
                 players[i]["color"], 
-                self.pawns_per_player_per_board[nb_boards][len(players)]
+                self.pawns_per_player_per_board[nb_boards][len(players)],
+                nb_boards,
             ) for i in range(len(players))]
         self.boards = board.BoardPile(self.board_size, board_orientation, nb_boards)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
@@ -170,7 +172,29 @@ class Game:
             self.begin_player_turn()
         return True
 
-    def try_choose_disk(self, disk_selected: int, update_ui) -> bool:
+    def _finish_disk_cycle(
+        self, cur, shuffle_disks: bool = True, advance_player: bool = True
+    ) -> None:
+        """Melange les disques si besoin, puis passe au joueur suivant."""
+        if cur.disks.is_all_disk_visible():
+            cur.disks.hide_all_disks()
+            if shuffle_disks:
+                cur.disks.mix_disks()
+                self._pending_disk_sync = {
+                    "player_id": cur.id,
+                    "disks": cur.disks.get_disks(),
+                }
+        if advance_player:
+            self.bonus_move = False
+            self.current_player = (self.current_player + 1) % len(self.players)
+            self.begin_player_turn()
+        self.check_board_descent()
+        if self.phase != "victoire":
+            self.check_victory()
+
+    def try_choose_disk(
+        self, disk_selected: int, update_ui, shuffle_disks: bool = True
+    ) -> bool:
         """Phase mouvement : choix du disque."""
         if self.phase != "mouvement":
             return False
@@ -183,15 +207,17 @@ class Game:
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
-            cur_player = self.players[self.current_player] 
+            cur_player = self.players[self.current_player]
             cur_player.disk_selected = disk_selected
             disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
             print(f"disque selectionne : {disk}")
+            if disk[0] == 0:
+                self._finish_disk_cycle(cur_player, shuffle_disks)
+                update_ui()
+                return True
             self.sub_phase = "choix_pion"
             update_ui()
-
-
             return True
         return False
 
@@ -424,25 +450,9 @@ class Game:
                 if board.grid.get((q2, r2)) == "S":
                     print(f"Case speciale : {cur.name} rejoue.")
                     self.sub_phase = "rejouer"
+                    self._finish_disk_cycle(cur, shuffle_disks, advance_player=False)
                 else:
-                    self.bonus_move = False
-                    self.current_player = (
-                        (self.current_player + 1) % len(self.players)
-                    )
-                    self.begin_player_turn()
-
-
-                if cur.disks.is_all_disk_visible():
-                    cur.disks.hide_all_disks()
-                    if shuffle_disks:
-                        cur.disks.mix_disks()
-                        self._pending_disk_sync = {
-                            "player_id": cur.id,
-                            "disks": cur.disks.get_disks(),
-                        }
-                self.check_board_descent()
-                if self.phase != "victoire":
-                    self.check_victory()
+                    self._finish_disk_cycle(cur, shuffle_disks)
                 return True
             print("le deplacement n'est pas valide car la case est \
                 occupee par un autre pion")
