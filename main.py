@@ -101,8 +101,7 @@ def start_client(target_ip):
     ui_holder["value"] = game_ui
     game_ui.displayInterface()
 
-
-if __name__ == "__main__":
+def main():
     game_menu = menu.Menu()
     game_config = game_menu.display()
     print(game_config)
@@ -135,3 +134,5 @@ if __name__ == "__main__":
             start_client(game_config["iptarget"])
         else:
             print("Aucune adresse IP fournie.")
+if __name__ == "__main__":
+    main()

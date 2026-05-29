@@ -637,7 +637,7 @@ class Interface:
                 case "mouvement":
                     text_title_phase = "Allez à la couche inférieure !"
                 case "victoire": 
-                    text_title_phase = f"Le joueur {"victoire d'un joueur"} a trouvé la pelle !" # À ajuster quand joueur victoire ok
+                    text_title_phase = f"Le joueur {self.game.winner.name} a récupérer la pelle en premier !"
                     to_show = "victory"
                 case _: 
                     text_title_phase = "⚠︎ Phase inconnue ⚠︎"
@@ -692,7 +692,7 @@ class Interface:
                         to_show = "can_pass"
 
                     case None:
-                        text_title_subphase = "Debug : subphase = None" # debug (plus tard : faire en sorte que rien n'apparaissent)
+                        text_title_subphase = "" 
 
                     case _: 
                         text_title_subphase = "⚠︎ Subphase inconnue ⚠︎" 
@@ -870,10 +870,50 @@ class Interface:
             )
 
         def victory_player(parent):
-            print("Logo de la taupe gagnante")
+            
+            joueur = {
+                "Player 1": "joueur1.png",
+                "Player 2": "joueur2.png",
+                "Player 3": "joueur3.png",
+                "Player 4": "joueur4.png",
+            }
+            cwd = os.path.dirname(__file__)
+            img_path = os.path.join(cwd, "ressources/pictures/pelle.png")
+            img = tk.PhotoImage(file=img_path)
+            img = img.subsample(6)
+            label = tk.Label(parent, image=img, bg=self.colors['background'])
+            label.image = img
+            img_joueur_path = os.path.join(cwd, f"ressources/pictures/{joueur[self.game.winner.name]}")
+            img_joueur = tk.PhotoImage(file=img_joueur_path)
+            img_joueur = img_joueur.subsample(6)
+            label_joueur = tk.Label(parent, image=img_joueur, bg=self.colors['background'])
+            label_joueur.image = img_joueur
+            parent.create_window(parent.winfo_width()/2+50, parent.winfo_height()/2-100, window=label)
+            parent.create_window(parent.winfo_width()/2-50, parent.winfo_height()/2-100, window=label_joueur)
+            
+            btn_quitter = tk.Button(
+                parent,
+                text="Suivant",
+                command=victory_popup,
+                bg=self.colors['layer101c'],
+                width=10,
+                height=2
+            )
+            
+            parent.create_window(
+                parent.winfo_width()/2,
+                parent.winfo_height()/2,
+                window=btn_quitter
+            )
 
 
-        #def victory_popup():
+        def victory_popup():
+            if tk.messagebox.askyesno("Rejouer","Voulez-vous rejouer ?"):
+                self.root.destroy()
+                import main
+                main.main()
+            else:
+                self.root.destroy()
 
 
     def _is_disk_shuffle_authority(self) -> bool:
