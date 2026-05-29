@@ -624,6 +624,19 @@ class Interface:
                 outline=self.colors['border'],
                 width=2,
             )
+            cwd = os.path.dirname(__file__)
+            img_path = os.path.join(cwd, "ressources/pictures/sortie.png")
+            self.img_quitter = tk.PhotoImage(file=img_path)
+            self.img_quitter = self.img_quitter.subsample(16)
+            btn_quitter = tk.Button(
+                canvas_right,
+                image=self.img_quitter,
+                bg=self.colors['red'],
+                bd=0, 
+                relief='flat',
+                command=self._popup_quitter,)
+            canvas_right.create_window(220, 20, window=btn_quitter, anchor='ne')
+
 
             ''' Cadre du statut / actions en cours de la partie '''
             canvas_right.create_rectangle(
@@ -940,6 +953,41 @@ class Interface:
             else:
                 self.root.destroy()
 
+
+    def _popup_quitter(self):
+        popup = tk.Toplevel(self.root)
+        popup.title("Quitter")
+        popup.geometry("350x150")
+        popup.resizable(False, False)
+        popup.grab_set()
+
+        tk.Label(
+            popup,
+            text="Voulez-vous quitter la partie ?",
+            font=('', 12),
+            bg=self.colors['background'],
+        ).pack(pady=15)
+
+        frame_boutons = tk.Frame(popup, bg=self.colors['background'])
+        frame_boutons.pack()
+
+        tk.Button(
+            frame_boutons, text="Annuler",
+            bg=self.colors['grey'], bd=0, relief='flat',
+            command=popup.destroy
+        ).grid(row=0, column=0, padx=5)
+
+        tk.Button(
+            frame_boutons, text="Quitter sans sauvegarder",
+            bg=self.colors['red'], bd=0, relief='flat',
+            command=self.root.destroy
+        ).grid(row=0, column=1, padx=5)
+
+        tk.Button(
+            frame_boutons, text="Quitter et sauvegarder",
+            bg=self.colors['green'], bd=0, relief='flat',
+            command=lambda: print("... sauvegarder ...")
+        ).grid(row=0, column=2, padx=5)
 
     def _is_disk_shuffle_authority(self) -> bool:
         """Seul l'hote (ou le local) melange les disques."""
