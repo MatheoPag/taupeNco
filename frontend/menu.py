@@ -88,6 +88,10 @@ class Menu:
         pygame.mixer.init()
         pygame.mixer.music.load("frontend/ressources/musics/musique.mp3")
         pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.1)
+        
+    def stop_music(self):
+        pygame.mixer.music.stop()
 
     # Construction des pages
     def _build_pages(self):

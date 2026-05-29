@@ -3,6 +3,7 @@ import tkinter as tk
 import time
 import os
 from entities import bot as bot_ai
+import pygame
 
 class Interface:
     def __init__(self, game, network=None, role="local", local_player_id=0):
@@ -76,6 +77,13 @@ class Interface:
 
         # Création des widgets
         self._build_widgets()
+        
+        #musique de la partie
+        cwd = os.path.dirname(__file__)
+        music_path = os.path.join(cwd, "ressources/musics/musique2.mp3")
+        pygame.mixer.music.load(music_path)
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.2)
 
 
     # Construction des widgets
