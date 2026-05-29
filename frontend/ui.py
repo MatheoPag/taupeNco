@@ -148,7 +148,9 @@ class Interface:
 
     def _setup_center_board(self):
         current_color_int = self.game.boards.get_top().color_int
-        color = f"layer{current_color_int}c"
+        color = f"layer{current_color_int}"
+        colorC = f"layer{current_color_int}c"
+        hole_color = f"layer{current_color_int+1}"
         canvas_circle = tk.Canvas(
             self.frame_center,
             bg=self.colors["background"],
@@ -197,17 +199,17 @@ class Interface:
                     if j + 2 < columns and grid[i][j + 2] is not None:
                         x2 = self._center_pad_x + (j + 2) * STEP_X
                         y2 = self._center_pad_y + i * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}c"], width=1)
                         
                     if i + 1 < rows and j - 1 >= 0 and grid[i + 1][j - 1] is not None:
                         x2 = self._center_pad_x + (j - 1) * STEP_X
                         y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}c"], width=1)
     
                     if i + 1 < rows and j + 1 < columns and grid[i + 1][j + 1] is not None:
                         x2 = self._center_pad_x + (j + 1) * STEP_X
                         y2 = self._center_pad_y + (i + 1) * STEP_Y
-                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}"], width=1)
+                        self._canvas_circle.create_line(x, y, x2, y2, fill=self.colors[f"layer{current_color_int}c"], width=1)
                     
             # 1ère couche : plateau (cases existantes)
             for r in range(rows):
@@ -218,7 +220,7 @@ class Interface:
 
                         match grid[r][c]:
                             case 0:
-                                r_node, size = 5, self.colors['layer0']
+                                r_node, size = 5, self.colors[colorC]
                                 self._board_canvas.create_oval(
                                     x - r_node,
                                     y - r_node,
@@ -236,17 +238,17 @@ class Interface:
 
                         match grid[r][c]:
                             case "X":
-                                r_node, size = 20, self.colors['layer1']
+                                r_node, size = 20, self.colors[hole_color]
                                 self._board_canvas.create_oval(
                                     x - r_node,
                                     y - r_node,
                                     x + r_node,
                                     y + r_node,
                                     fill=size,
-                                    outline='',
+                                    outline=self.colors['border'],
                                 )
                             case "S":
-                                r_node, size = 13, self.colors['layer0']
+                                r_node, size = 13, self.colors[colorC]
                                 self._board_canvas.create_oval(
                                     x - r_node,
                                     y - r_node,
