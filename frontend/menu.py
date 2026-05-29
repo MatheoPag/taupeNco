@@ -293,7 +293,6 @@ class Menu:
         """Construit une page de choix du mode de jeu (joueurs, classique/personnalisé)."""
         frame = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame.grid(row=0, column=0, sticky='nsew')
-
         label_title = tk.Label(
             frame, text=title_text, font=('', 24), bg=self.colors['background']
         )
@@ -488,6 +487,53 @@ class Menu:
         self.root.mainloop()
 
         return self.game_config
+    
+
+def _popup_quitter(self):
+    popup = tk.Toplevel(self.root)
+    popup.title("Quitter")
+    popup.geometry("300x150")
+    popup.resizable(False, False)
+    popup.grab_set()  
+
+    tk.Label(
+        popup,
+        text="Voulez-vous quitter la partie ?",
+        font=('', 12),
+        bg=self.colors['background'],
+    ).pack(pady=15)
+
+    frame_boutons = tk.Frame(popup, bg=self.colors['background'])
+    frame_boutons.pack()
+
+    tk.Button(
+        frame_boutons,
+        text="Annuler",
+        bg=self.colors['grey'],
+        bd=0,
+        relief='flat',
+        command=popup.destroy,
+    ).grid(row=0, column=0, padx=5)
+
+    tk.Button(
+        frame_boutons,
+        text="Quitter sans sauvegarder",
+        bg=self.colors['red'],
+        bd=0,
+        relief='flat',
+        command=self.root.destroy,
+    ).grid(row=0, column=1, padx=5)
+
+    tk.Button(
+        frame_boutons,
+        text="Quitter et sauvegarder",
+        bg=self.colors['green'],
+        bd=0,
+        relief='flat',
+        command=lambda: print("... sauvegarder ..."),
+    ).grid(row=0, column=2, padx=5)
+
+
 class Music:
     def __init__(self):
         pygame.mixer.init()

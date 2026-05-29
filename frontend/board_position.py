@@ -138,6 +138,7 @@ class Boards:
         button_start.grid(row=1, column=1, sticky='nsew', padx=100)
 
 
+
     # Gestion de l'orientation d'un plateau
     def hexa_board(self, frame, layer):
         png = { # Change la couleur du png en fonction de la couche

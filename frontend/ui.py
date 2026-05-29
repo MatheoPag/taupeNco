@@ -95,7 +95,18 @@ class Interface:
         ''' DROITE : Infos sur la partie en cours '''
         self.frame_right = tk.Frame(self.frame_main, bg="#A3C9E6")
         self.frame_right.grid(row=0, column=2, sticky='nsew')
+
+        self.img_quitter = tk.PhotoImage(file="frontend/ressources/pictures/img_quitter.png")
         
+        btn_quitter = tk.Button(
+            self.frame_right,
+            image=self.img_quitter,
+            bg=self.colors['red'],
+            bd=0,
+            relief='flat',
+            command=self._popup_quitter,
+        )
+        btn_quitter.grid(row=0, column=2, sticky='ne', padx=5, pady=5)
         self.update_ui()
 
     def update_ui(self):
