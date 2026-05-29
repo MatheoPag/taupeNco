@@ -674,8 +674,16 @@ class Interface:
                             to_show = "blocked"
                             self.game.sub_phase = "choix_disque"
 
-                    case "deplacement": 
-                        text_title_subphase = f"Cette taupe se déplace de {player.disks.get_disks()[player.disk_selected][0]} case(s)."
+                    case "deplacement":
+                        disk_value = player.disks.get_disks()[player.disk_selected][0]
+                        if disk_value == 0:
+                            text_title_subphase = (
+                                f"Le joueur {pnb} passe son tour (disque 0)."
+                            )
+                        else:
+                            text_title_subphase = (
+                                f"Cette taupe se déplace de {disk_value} case(s)."
+                            )
                         to_show = "move"
 
                     case "rejouer":
@@ -941,11 +949,14 @@ class Interface:
             )
             return
 
-        if self.game.try_choose_disk(idx, self.update_ui):
+        if self.game.try_choose_disk(
+            idx, self.update_ui, shuffle_disks=self._is_disk_shuffle_authority()
+        ):
             if self.role == "host":
                 self.network.send_data(
                     {"type": "choose_disk", "disk_selected": idx}
                 )
+            self._send_disk_sync_if_needed()
 
     def _send_disk_sync_if_needed(self) -> None:
         payload = self.game.consume_disk_sync()
@@ -973,7 +984,12 @@ class Interface:
         elif action_type == "play_turn":
             self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
-            self.game.try_choose_disk(msg["disk_selected"], self.update_ui)
+            if self.game.try_choose_disk(
+                msg["disk_selected"],
+                self.update_ui,
+                shuffle_disks=self._is_disk_shuffle_authority(),
+            ):
+                self._send_disk_sync_if_needed()
         elif action_type == "choose_pawn":
             self.game.try_choose_pawn(msg["row"], msg["col"])
         elif action_type == "move_chosen_pawn_to":
