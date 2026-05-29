@@ -15,7 +15,12 @@ def start_from_save(game_instance):
 def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
     if board_orientation is None:
         board_orientation = [0, 0, 0, 0, 0, 0]
-    game_instance = game_entity.Game(nbplayer, 1 if bot else 0, nb_boards, board_orientation)
+    game_instance = game_entity.Game(
+            nbplayer,
+            1 if bot else 0, 
+            nb_boards, 
+            board_orientation
+        )
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
 

@@ -198,11 +198,23 @@ class Boards:
         self.stock_images[layer] = img
 
         image_board = tk.PhotoImage(file=png[layer]).zoom(2).subsample(5)
-        canvas_board = tk.Canvas(frame, width=w, height=h, bg=frame['bg'], bd=0, highlightthickness=0)
+        canvas_board = tk.Canvas(
+                frame, 
+                width=w, 
+                height=h, 
+                bg=frame['bg'], 
+                bd=0, 
+                highlightthickness=0
+            )
         canvas_board.create_image(w/2, h/2, image=image_board)
         canvas_board.image = image_board
         canvas_board.pack(expand='YES')
-        label = tk.Label(frame,text=self.layer_names[layer],bg=frame['bg'],font=('', 14))
+        label = tk.Label(
+                frame,
+                text=self.layer_names[layer],
+                bg=frame['bg'],
+                font=('', 14)
+            )
         label.pack()
         self.stock_canva[layer] = canvas_board
         self.stock_images[layer] = img
@@ -210,13 +222,28 @@ class Boards:
         
         frame_buttons = tk.Frame(frame, bg=frame['bg'])
         frame_buttons.pack(pady=10)
-
         
-        button_left = tk.Button(frame_buttons,text="↺",font=('', 20),bg=frame['bg'],bd=0,relief='flat',command=lambda: self.rotate(layer, -1))
+        button_left = tk.Button(
+                frame_buttons,
+                text="↺",
+                font=('', 20),
+                bg=frame['bg'],
+                bd=0,
+                relief='flat',
+                command=lambda: self.rotate(layer, -1)
+            )
         button_left.pack(side='left', padx=10)
 
         
-        button_right = tk.Button(frame_buttons,text="↻",font=('', 20),bg=frame['bg'],bd=0,relief='flat',command=lambda: self.rotate(layer, +1))
+        button_right = tk.Button(
+                frame_buttons,
+                text="↻",
+                font=('', 20),
+                bg=frame['bg'],
+                bd=0,
+                relief='flat',
+                command=lambda: self.rotate(layer, +1)
+            )
         button_right.pack(side='left', padx=10)
 
 
@@ -233,7 +260,11 @@ class Boards:
 
         canvas = self.stock_canva[layer]
         canvas.delete("all")
-        canvas.create_image(canvas.winfo_width() // 2,canvas.winfo_height() // 2, image=photo,anchor='center')
+        canvas.create_image(
+            canvas.winfo_width() // 2,
+            canvas.winfo_height() // 2, 
+            image=photo,anchor='center'
+        )
         canvas.image = photo
         
         

@@ -31,7 +31,7 @@ class Game:
                 for i in range(nb_players)
             ]
             + [
-                {"name": f"Bot", "color": self.player_colors[i + nb_players]}
+                {"name": "Bot", "color": self.player_colors[i + nb_players]}
                 for i in range(nb_bots)
             ]
         )
@@ -74,8 +74,8 @@ class Game:
 
     def apply_players_disks_state(self, players_disks: list[list[list[int]]]) -> None:
         """Applique l'etat des disques recu de l'hote."""
-        for player, disks in zip(self.players, players_disks):
-            player.disks.set_disks(disks)
+        for p, disks in zip(self.players, players_disks):
+            p.disks.set_disks(disks)
 
     def consume_disk_sync(self) -> dict | None:
         """Retourne et efface la synchro disques en attente (apres mix hote)."""
@@ -294,13 +294,13 @@ class Game:
         if len(self.boards.pile) != 1:
             return None
         center_row, center_col = self.get_center_cell()
-        for player in self.players:
-            for pawn in player.pawns:
+        for p in self.players:
+            for pawn in p.pawns:
                 if (
                     pawn.state == "alive"
                     and pawn.position == (center_row, center_col)
                 ):
-                    return player
+                    return p
         return None
 
     def check_victory(self) -> bool:
@@ -324,7 +324,10 @@ class Game:
         return True
 
     def check_board_descent(self) -> None:
-        """Verifie si tous les trous sont remplis et declenche la descente de plateau."""
+        """
+        Verifie si tous les trous sont remplis 
+        et declenche la descente de plateau.
+        """
         if not self.are_all_holes_filled():
             return
         if len(self.boards.pile) == 1:
@@ -336,8 +339,8 @@ class Game:
             "descente au plateau inferieur."
         )
 
-        for player in self.players:
-            for pawn in player.pawns:
+        for p in self.players:
+            for pawn in p.pawns:
                 if pawn.position is None:
                     continue
                 row, col = pawn.position

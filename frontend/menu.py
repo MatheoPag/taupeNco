@@ -73,7 +73,7 @@ class Menu:
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
             'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
-            'iptarget' : tk.StringVar(value="127.0.0.1"), # Adresse IP pour rejoindre l'host
+            'iptarget' : tk.StringVar(value="127.0.0.1"), # Adresse IP pour rejoindre
             'board_orientation' : [0, 0, 0, 0, 0, 0],
         }
         self._pending_gamemode = None
@@ -339,7 +339,9 @@ class Menu:
 
             # Boutons de la page d'accueil
         button_bot.config(command=lambda: self.set_connexion_solo(self.frame_solo_mode))
-        button_local.config(command=lambda : self.set_connexion_local(self.frame_local_mode))
+        button_local.config(
+            command=lambda : self.set_connexion_local(self.frame_local_mode)
+        )
         button_online.config(
             command=lambda : self.set_connexion_multiplayer(frame_multiplayer_mode)
         )
@@ -355,7 +357,13 @@ class Menu:
                 return
             try:
                 loaded_game = load_game(save_path)
-            except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError) as err:
+            except (
+                OSError, 
+                json.JSONDecodeError, 
+                KeyError, 
+                ValueError, 
+                TypeError
+            ) as err:
                 messagebox.showerror(
                     "Sauvegarde invalide",
                     f"Impossible de charger la partie :\n{err}",
@@ -411,7 +419,11 @@ class Menu:
             )
             label_player_title.pack()
 
-            frame_button_player = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
+            frame_button_player = tk.Frame(
+                    frame, 
+                    bg=self.colors['border'], 
+                    padx=2, pady=2
+                )
             frame_button_player.pack(padx=20, pady=20)
             frame_button_player.grid_rowconfigure(0, weight=1)
             frame_button_player.grid_columnconfigure(2, weight=1)
@@ -626,7 +638,7 @@ class Menu:
             p2 = int(parts[1])
             p3 = int(parts[2])
             p4 = int(parts[3])
-        except:
+        except ValueError:
             return False
 
         if p1 == 1 and p2 == 1 and p3 == 1 and p4 == 1:
@@ -654,7 +666,11 @@ class Menu:
             self.game_config['iptarget'] = ip
             self.root.destroy()
         else:
-            messagebox.showwarning("Erreur", "L'adresse IP n'est pas conforme. Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)")
+            messagebox.showwarning(
+                    "Erreur", 
+                    "L'adresse IP n'est pas conforme. \
+                    Veuillez entrer l'adresse au bon format. (ex: 192.168.1.76)"
+                )
 
 
     # Affichage des pages

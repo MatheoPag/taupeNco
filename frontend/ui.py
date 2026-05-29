@@ -135,14 +135,14 @@ class Interface:
         pad = self._center_pad
         STEP_X = self._center_STEP_X
         STEP_Y = self._center_STEP_Y
-        for player in self.game.players:
-            for pawn in player.pawns:
+        for p in self.game.players:
+            for pawn in p.pawns:
                 if pawn.state != "alive" or pawn.position is None:
                     continue
                 x = self._center_pad_x + pawn.position[1] * STEP_X
                 y = self._center_pad_y + pawn.position[0] * STEP_Y
                 r_node = 10
-                fill = self.colors[player.name.lower().replace(" ", "")]
+                fill = self.colors[p.name.lower().replace(" ", "")]
                 self._board_canvas.create_oval(
                     x - r_node, y - r_node, x + r_node, y + r_node,
                     fill=fill, outline=self.colors['border'], tags='pawns',
