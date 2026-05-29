@@ -890,8 +890,30 @@ class Interface:
             label_joueur.image = img_joueur
             parent.create_window(parent.winfo_width()/2+50, parent.winfo_height()/2-100, window=label)
             parent.create_window(parent.winfo_width()/2-50, parent.winfo_height()/2-100, window=label_joueur)
+            
+            btn_quitter = tk.Button(
+                parent,
+                text="Suivant",
+                command=victory_popup,
+                bg=self.colors['layer101c'],
+                width=10,
+                height=2
+            )
+            
+            parent.create_window(
+                parent.winfo_width()/2,
+                parent.winfo_height()/2,
+                window=btn_quitter
+            )
 
-        #def victory_popup():
+
+        def victory_popup():
+            if tk.messagebox.askyesno("Rejouer","Voulez-vous rejouer ?"):
+                self.root.destroy()
+                import main
+                main.main()
+            else:
+                self.root.destroy()
 
 
     def _is_disk_shuffle_authority(self) -> bool:
