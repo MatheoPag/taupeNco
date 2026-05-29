@@ -3,7 +3,6 @@ from pathlib import Path
 
 from entities import board
 from entities import game
-from entities import golden_shovel
 from entities import pawn
 
 SAVE_VERSION = 1
@@ -49,7 +48,6 @@ def game_to_dict(game_obj) -> dict:
         "winner_id": winner_id,
         "players": [player_to_dict(p) for p in game_obj.players],
         "boards": [board_to_dict(b) for b in game_obj.boards.pile],
-        "golden_shovel": list(game_obj.golden_shovel.position),
     }
 
 
@@ -103,9 +101,6 @@ def game_from_dict(data: dict):
         player_obj.set_pawns([pawn_from_dict(p) for p in saved_player["pawns"]])
 
     g.boards.set_pile([board_from_dict(b) for b in data["boards"]])
-    g.set_golden_shovel(
-        golden_shovel.GoldenShovel(tuple(data["golden_shovel"]))
-    )
 
     g.current_player = data["current_player"]
     g.phase = data["phase"]

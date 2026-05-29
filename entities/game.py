@@ -1,5 +1,4 @@
 from . import board
-from . import golden_shovel
 from . import player
 import random 
 # 192.168.1.76
@@ -49,7 +48,6 @@ class Game:
                 nb_boards,
             ) for i in range(len(players))]
         self.boards = board.BoardPile(self.board_size, board_orientation, nb_boards)
-        self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
         self.bonus_move = False
@@ -84,11 +82,6 @@ class Game:
         payload = self._pending_disk_sync
         self._pending_disk_sync = None
         return payload
-
-
-    def set_golden_shovel(self, shovel) -> None:
-        """Remplace la golden shovel (utilise pour le chargement d'une save)."""
-        self.golden_shovel = shovel
 
     def check_placement(self, players):
         for p in players:
