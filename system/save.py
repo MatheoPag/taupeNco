@@ -3,21 +3,31 @@ from pathlib import Path
 
 from entities import board
 from entities import game
-from entities import golden_shovel
 from entities import pawn
 
 SAVE_VERSION = 1
-SAVE_PATH = Path(__file__).parent.parent / "save" / "save.json"
+SAVE_EXTENSION = ".tandc"
+TANDC_FILETYPES = [("Sauvegarde Taupes & Cie", f"*{SAVE_EXTENSION}")]
+SAVE_PATH = Path(__file__).parent.parent / "save" / f"save{SAVE_EXTENSION}"
 
 
-def save_game(game_obj, path: Path = SAVE_PATH) -> None:
+def ensure_tandc_path(path: str | Path) -> Path:
+    path = Path(path)
+    if path.suffix.lower() != SAVE_EXTENSION:
+        path = path.with_suffix(SAVE_EXTENSION)
+    return path
+
+
+def save_game(game_obj, path: Path | str = SAVE_PATH) -> None:
+    path = ensure_tandc_path(path)
     data = game_to_dict(game_obj)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def load_game(path: Path = SAVE_PATH):
+def load_game(path: Path | str = SAVE_PATH):
+    path = ensure_tandc_path(path)
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return game_from_dict(data)
@@ -38,7 +48,6 @@ def game_to_dict(game_obj) -> dict:
         "winner_id": winner_id,
         "players": [player_to_dict(p) for p in game_obj.players],
         "boards": [board_to_dict(b) for b in game_obj.boards.pile],
-        "golden_shovel": list(game_obj.golden_shovel.position),
     }
 
 
@@ -92,9 +101,6 @@ def game_from_dict(data: dict):
         player_obj.set_pawns([pawn_from_dict(p) for p in saved_player["pawns"]])
 
     g.boards.set_pile([board_from_dict(b) for b in data["boards"]])
-    g.set_golden_shovel(
-        golden_shovel.GoldenShovel(tuple(data["golden_shovel"]))
-    )
 
     g.current_player = data["current_player"]
     g.phase = data["phase"]

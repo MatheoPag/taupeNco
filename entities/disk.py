@@ -26,7 +26,7 @@ class Disks:
 
     def is_all_disk_visible(self) -> bool:
         for i in range(len(self.__disks)):
-            if self.__disks[i][1] == False:
+            if not self.__disks[i][1]:
                 return False
         return True
 
