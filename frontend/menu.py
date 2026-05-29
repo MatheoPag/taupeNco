@@ -1,9 +1,11 @@
 # Librairie
+import json
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 import pygame
 from system.server import get_local_ip
+from system.save import TANDC_FILETYPES, load_game, SAVE_PATH
 from frontend.board_position import Boards
 
 class Menu:
@@ -65,7 +67,8 @@ class Menu:
         # Création du dictionnaire pour la configuration du mode de jeu
         self.game_config = {
             'save' : None,
-            'connexionmode' : None, # local OU multiplayer
+            'loaded_game' : None,
+            'connexionmode' : None, # local, multiplayer ou save
             'gamemode' : None, # classic, solobot OU custom
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
             'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
@@ -343,14 +346,25 @@ class Menu:
 
             # Permet l'import d'une sauvegarde
         def import_save():
-            self.game_config['save'] = filedialog.askopenfilename(
+            save_path = filedialog.askopenfilename(
                 title="Choisissez une sauvegarde",
-                
-                filetypes=[
-                    ("Fichiers exécutables", "*.tandc") # à modifier en fonction du type fichier
-                ]
+                filetypes=TANDC_FILETYPES,
+                initialdir=SAVE_PATH.parent,
             )
-            print(self.game_config['save']) #debug
+            if not save_path:
+                return
+            try:
+                loaded_game = load_game(save_path)
+            except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError) as err:
+                messagebox.showerror(
+                    "Sauvegarde invalide",
+                    f"Impossible de charger la partie :\n{err}",
+                )
+                return
+            self.game_config['save'] = save_path
+            self.game_config['loaded_game'] = loaded_game
+            self.game_config['connexionmode'] = 'save'
+            self.root.destroy()
 
         button_import.config(command=import_save)
 

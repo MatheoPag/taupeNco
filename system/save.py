@@ -7,17 +7,28 @@ from entities import golden_shovel
 from entities import pawn
 
 SAVE_VERSION = 1
-SAVE_PATH = Path(__file__).parent.parent / "save" / "save.json"
+SAVE_EXTENSION = ".tandc"
+TANDC_FILETYPES = [("Sauvegarde Taupes & Cie", f"*{SAVE_EXTENSION}")]
+SAVE_PATH = Path(__file__).parent.parent / "save" / f"save{SAVE_EXTENSION}"
 
 
-def save_game(game_obj, path: Path = SAVE_PATH) -> None:
+def ensure_tandc_path(path: str | Path) -> Path:
+    path = Path(path)
+    if path.suffix.lower() != SAVE_EXTENSION:
+        path = path.with_suffix(SAVE_EXTENSION)
+    return path
+
+
+def save_game(game_obj, path: Path | str = SAVE_PATH) -> None:
+    path = ensure_tandc_path(path)
     data = game_to_dict(game_obj)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def load_game(path: Path = SAVE_PATH):
+def load_game(path: Path | str = SAVE_PATH):
+    path = ensure_tandc_path(path)
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return game_from_dict(data)

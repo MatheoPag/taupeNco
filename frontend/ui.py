@@ -1,8 +1,10 @@
 # Librairie
 import tkinter as tk
+from tkinter import filedialog
 import time
 import os
 from entities import bot as bot_ai
+from system.save import save_game, ensure_tandc_path, TANDC_FILETYPES, SAVE_EXTENSION, SAVE_PATH
 
 class Interface:
     def __init__(self, game, network=None, role="local", local_player_id=0):
@@ -986,8 +988,32 @@ class Interface:
         tk.Button(
             frame_boutons, text="Quitter et sauvegarder",
             bg=self.colors['green'], bd=0, relief='flat',
-            command=lambda: print("... sauvegarder ...")
+            command=lambda: self._quit_and_save(popup),
+            state="disabled" if self.role == "client" else "normal",
         ).grid(row=0, column=2, padx=5)
+
+    def _quit_and_save(self, popup: tk.Toplevel) -> None:
+        save_path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Enregistrer la partie",
+            defaultextension=SAVE_EXTENSION,
+            filetypes=TANDC_FILETYPES,
+            initialdir=SAVE_PATH.parent,
+            initialfile="partie.tandc",
+        )
+        if not save_path:
+            return
+
+        try:
+            save_game(self.game, ensure_tandc_path(save_path))
+        except OSError as err:
+            tk.messagebox.showerror(
+                "Erreur de sauvegarde",
+                f"Impossible d'enregistrer la partie :\n{err}",
+            )
+            return
+        popup.destroy()
+        self.root.destroy()
 
     def _is_disk_shuffle_authority(self) -> bool:
         """Seul l'hote (ou le local) melange les disques."""
