@@ -15,8 +15,8 @@ class Board:
 
 
         LAYER_UI_INDEX = {
-            "Terre": 101,
-            "Pierre": 102,
+            "Terre": 102,
+            "Pierre": 101,
             "Surface": 0,
             "Terre arable": 1,
             "Sous-sol": 2,
@@ -207,7 +207,7 @@ class BoardPile:
                 board_orientation: list[int], 
                 nb_boards: int) -> None:
         self._markers_by_layer = {
-            "Pierre" : {
+            "Terre" : {
                 "X": [
                         (2, -4), (3, -4),
                         (-1, -3), (0, -3), (2, -3),
@@ -221,22 +221,21 @@ class BoardPile:
                 ],
                 "S": [],
             },
-            "Terre" : {
+            "Pierre" : {
                 "X": [
-                        (1, -4),
-                        (3, -3),
+                        (4, -4),
+                        (1, -3), (3, -3), (4, -3),
                         (-2, -2), (1, -2),
-                        (-1, -1), (2, -1),
+                        (4, -1),
                         (-3, 0), (2, 0), (4, 0),
-                        (-2, 1), (-1, 1),
-                        (-3, 2), (-2, 2), (0, 2), 
-                        (-3, 3), (-1, 3), (0, 3), (2, 2),
+                        (-1, 1), (0, 1),
+                        (-3, 2), (-2, 2),
+                        (-3, 3), (-1, 3), (0, 3),
                         (-2, 4)
                     ],
                 "S": [
                         (0, -4),
-                        (-3, 1),
-                        (1, 2),
+                        (-3, 1), (1, 1),
                         (-4, 4)
                     ],
                 "J": [],
@@ -267,8 +266,8 @@ class BoardPile:
         self.pile = []
 
         LAYER_ORDER = [
-            "Pierre",
             "Terre",
+            "Pierre",
             "Surface",
             "Terre arable",
             "Sous-sol",
@@ -278,6 +277,8 @@ class BoardPile:
         start = len(LAYER_ORDER) - nb_boards
         for offset, layer_name in enumerate(LAYER_ORDER[start:]):
             layer_markers = copy.deepcopy(self._markers_by_layer[layer_name])
+            if offset == 0:
+                layer_markers["S"] = []
             layer_index = start + offset
             orientation = (
                 board_orientation[layer_index]
