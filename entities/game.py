@@ -8,25 +8,31 @@ class Game:
     def __init__(self, 
                 nb_players: int, 
                 nb_bots: int, 
+                nb_boards: int,
                 board_orientation: list[int]) -> None:
         self.board_size = 9
-        self.pawns_per_player = {2 : 10, 3 : 7, 4 : 6} # 2 normal -> 10, on a mis 2 pour le dev
-        self.colors = [
-                (0, "Surface"),
-                (1, "Terre arable"),
-                (2, "Sous-sol"),
-                (3, "Roche mère"),
+        self.pawns_per_player_per_board = {
+            3 : {2 : 9, 3 : 6, 4 : 5},
+            4 : {2 : 10, 3 : 7, 4 : 6},
+            5 : {2 : 19, 3 : 13, 4 : 10},
+            6 : {2 : 16, 3 : 11, 4 : 8},
+        }
+        self.player_colors = [
+                "Terre",
+                "Pierre",
+                "Surface",
+                "Terre arable",
             ]
         self.nb_human_players = nb_players
         self.nb_bots = nb_bots
         self.current_player = random.randint(0, nb_players + nb_bots - 1)
         players = (
             [
-                {"name": f"Player {i+1}", "color": self.colors[i]}
+                {"name": f"Player {i+1}", "color": self.player_colors[i]}
                 for i in range(nb_players)
             ]
             + [
-                {"name": f"Bot", "color": self.colors[i + nb_players]}
+                {"name": f"Bot", "color": self.player_colors[i + nb_players]}
                 for i in range(nb_bots)
             ]
         )
@@ -37,9 +43,9 @@ class Game:
                 i, 
                 players[i]["name"], 
                 players[i]["color"], 
-                self.pawns_per_player[len(players)]
+                self.pawns_per_player_per_board[nb_boards][len(players)]
             ) for i in range(len(players))]
-        self.boards = board.BoardPile(self.colors, self.board_size, board_orientation)
+        self.boards = board.BoardPile(self.board_size, board_orientation, nb_boards)
         self.golden_shovel = golden_shovel.GoldenShovel(self.boards.get_bottom().center)
         self.phase = "placement"
         self.sub_phase = None
@@ -172,6 +178,8 @@ class Game:
             self.sub_phase = "choix_disque"
         if self.sub_phase == "passer_tour":
             return False
+        if not self.has_pawns_on_board():
+            return False
         if self.sub_phase == "choix_disque":
             print("choix du disque")
             self.legal_moves = None
@@ -224,6 +232,11 @@ class Game:
                 pawn_blocked += 1
         if pawn_blocked == len(cur.pawns):
             return True
+
+    def has_pawns_on_board(self) -> bool:
+        """True si le joueur courant a au moins un pion non elimine."""
+        cur = self.players[self.current_player]
+        return any(p.state != "dead" for p in cur.pawns)
 
     def is_all_pawns_in_holes(self) -> bool:
         """True si toutes les taupes posees du joueur courant sont sur un trou (X)."""
@@ -299,7 +312,7 @@ class Game:
             return
         top = self.boards.get_top()
         print(
-            f"Tous les trous du plateau « {top.name} » sont remplis : "
+            f"Tous les trous du plateau {top.name} sont remplis : "
             "descente au plateau inferieur."
         )
 
@@ -317,8 +330,8 @@ class Game:
         self._board_descended = True
 
     def begin_player_turn(self) -> None:
-        """Debut de tour : choix disque ou proposition de passer si tout est dans un trou."""
-        if self.is_all_pawns_in_holes():
+        """Debut de tour : choix disque ou proposition de passer si ineligible."""
+        if not self.has_pawns_on_board() or self.is_all_pawns_in_holes():
             self.sub_phase = "passer_tour"
         else:
             self.sub_phase = "choix_disque"

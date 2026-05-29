@@ -255,11 +255,8 @@ class Interface:
                                     fill=size,
                                     outline='',
                                 )
-                                
-                                
-            
 
-        
+            self._redraw_center_pawns()
 
         self._center_rows = 9
         self._center_columns = 17
@@ -453,7 +450,7 @@ class Interface:
             if self.game.phase == 'placement':
                 round_title = "Mise en place"
             else:
-                round_title = f"Manche {self.game.colors[0][0] + 1}" # Attention risque de casser en mode custom
+                round_title = self.game.boards.get_top().name # Attention risque de casser en mode custom
 
             label_round_title = tk.Label(
                 canvas_left,
@@ -570,11 +567,15 @@ class Interface:
 
     # WIDGET PARTIE CENTRE
     def center(self):
+        board_rebuilt = False
         if self.game.consume_board_descent():
             self._reload_center_board()
+            board_rebuilt = True
         if self._board_canvas is None:
             self._setup_center_board()
-        self._redraw_center_pawns()
+            board_rebuilt = True
+        if not board_rebuilt:
+            self._redraw_center_pawns()
 
     # WIDGET PARTIE DROITE
     def right(self):
@@ -685,10 +686,16 @@ class Interface:
                         to_show = "replay"
 
                     case "passer_tour":
-                        text_title_subphase = (
-                            f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
-                            "Il a le droit de passer son tour."
-                        )
+                        if not self.game.has_pawns_on_board():
+                            text_title_subphase = (
+                                f"Le joueur {pnb} n'a plus de taupe sur le plateau.\n"
+                                "Il passe son tour."
+                            )
+                        else:
+                            text_title_subphase = (
+                                f"Toutes les taupes du joueur {pnb} sont déjà dans un trou.\n"
+                                "Il a le droit de passer son tour."
+                            )
                         to_show = "can_pass"
 
                     case None:
@@ -733,7 +740,8 @@ class Interface:
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 case "can_pass" :
-                    next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
+                    if self.game.has_pawns_on_board():
+                        next_button(canvas_right, "Jouer", self.play_turn_and_update,  "w")
                     next_button(canvas_right, "Passer", self.change_player_and_update,  "e")
 
                 # Victoire d'un joueur
