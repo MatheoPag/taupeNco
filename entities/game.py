@@ -37,6 +37,7 @@ class Game:
             ]
         )
         self.nb_boards = nb_boards
+        self.board_orientation = list(board_orientation)
         self.disk_selected = None
         self.pawn_selected = None
         self.players = [
