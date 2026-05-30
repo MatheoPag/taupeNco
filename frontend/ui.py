@@ -496,13 +496,13 @@ class Interface:
         if self.role == "client":
             self._send_network_action({"type": "next_player"})
             return
-        self.game.bonus_move = False
-        self.game.current_player = (
-            (self.game.current_player + 1) % len(self.game.players)
+        cur = self.game.players[self.game.current_player]
+        self.game._finish_disk_cycle(
+            cur, shuffle_disks=self._is_disk_shuffle_authority()
         )
-        self.game.begin_player_turn()
         if self.role == "host":
             self._send_network_action({"type": "next_player"})
+            self._send_disk_sync_if_needed()
         self.update_ui()
 
     def replay_turn_and_update(self):
@@ -511,9 +511,12 @@ class Interface:
         if self.role == "client":
             self._send_network_action({"type": "replay_turn"})
             return
-        self.game.start_bonus_turn()
+        self.game.start_bonus_turn(
+            shuffle_disks=self._is_disk_shuffle_authority()
+        )
         if self.role == "host":
             self._send_network_action({"type": "replay_turn"})
+            self._send_disk_sync_if_needed()
         self.update_ui()
 
     def play_turn_and_update(self):
@@ -522,9 +525,12 @@ class Interface:
         if self.role == "client":
             self._send_network_action({"type": "play_turn"})
             return
-        self.game.sub_phase = "choix_disque"
+        self.game.enter_disk_choice_phase(
+            shuffle_disks=self._is_disk_shuffle_authority()
+        )
         if self.role == "host":
             self._send_network_action({"type": "play_turn"})
+            self._send_disk_sync_if_needed()
         self.update_ui()
 
 
@@ -825,7 +831,6 @@ class Interface:
                                 "Il passe son tour."
                             )
                             to_show = "blocked"
-                            self.game.sub_phase = "choix_disque"
 
                     case "deplacement":
                         disk_value = player.disks.get_disks()[player.disk_selected][0]
@@ -879,7 +884,12 @@ class Interface:
             match to_show:
                 # Choix du disque 
                 case "disks" :
-                    # 
+                    if self.game.sub_phase == "choix_disque":
+                        self.game.prepare_disk_choice(
+                            shuffle_disks=self._is_disk_shuffle_authority()
+                        )
+                        if self.role == "host":
+                            self._send_disk_sync_if_needed()
                     draw_disks(canvas_right, pnb, sizeW, sizeH)
 
                 # Bouton suivant
@@ -1235,15 +1245,18 @@ class Interface:
         if action_type == "place_pawn":
             self.game.try_place_current_pawn(msg["row"], msg["col"])
         elif action_type == "next_player":
-            self.game.bonus_move = False
-            self.game.current_player = (
-                (self.game.current_player + 1) % len(self.game.players)
+            cur = self.game.players[self.game.current_player]
+            self.game._finish_disk_cycle(
+                cur, shuffle_disks=self._is_disk_shuffle_authority()
             )
-            self.game.begin_player_turn()
         elif action_type == "replay_turn":
-            self.game.start_bonus_turn()
+            self.game.start_bonus_turn(
+                shuffle_disks=self._is_disk_shuffle_authority()
+            )
         elif action_type == "play_turn":
-            self.game.sub_phase = "choix_disque"
+            self.game.enter_disk_choice_phase(
+                shuffle_disks=self._is_disk_shuffle_authority()
+            )
         elif action_type == "choose_disk":
             self.game.try_choose_disk(
                 msg["disk_selected"],
