@@ -79,8 +79,6 @@ class GameServer:
         Puis retourne pour lancer la partie.
         """
         self._running = True
-        print("En attente de joueur...")
-
         while len(self.clients) < self.required_clients:
             conn, addr = self.server.accept()
             self.clients.append(conn)
@@ -103,14 +101,9 @@ class GameServer:
                 daemon=True,
             ).start()
 
-            print(
-                f"Joueur connecté ({len(self.clients)}/{self.required_clients}) "
-                f": {addr[0]}:{addr[1]} -> ID {player_id}"
-            )
             if len(self.clients) < self.required_clients:
                 print("En attente de joueur...")
 
-        print(f"Lobby complet ({self.max_player} joueur(s)). Démarrage de la partie...")
         self._running = False
 
     def stop(self):
