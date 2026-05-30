@@ -28,11 +28,9 @@ def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
 def start_host(nbplayer, host_ip, nb_boards=4, board_orientation=None):
     if board_orientation is None:
         board_orientation = [0, 0, 0, 0, 0, 0]
-    print(f"Partie hébergée - IP à partager : {host_ip}:5555")
     game_server = GameServer(max_player=nbplayer, host="0.0.0.0", port=5555)
     game_server.start()
 
-    print("Initialisation de la partie...")
     game_instance = game_entity.Game(nbplayer, 0, nb_boards, board_orientation)
 
     game_ui = ui.Interface(
@@ -77,7 +75,6 @@ def start_client(target_ip):
         msg_type = msg.get("type")
         if msg_type == "assign_id":
             local_id["value"] = msg["player_id"]
-            print(f"ID attribué par l'hôte : {msg['player_id']}")
         elif msg_type == "game_start":
             start_data["value"] = msg
             ready_event.set()
@@ -88,11 +85,9 @@ def start_client(target_ip):
 
     game_client.listen(on_message)
 
-    print("En attente du démarrage de la partie par l'hôte...")
     ready_event.wait()
 
     data = start_data["value"]
-    print(f"Partie démarrée : {data['nbplayer']} joueur(s).")
 
     game_instance = game_entity.Game(
         data["nbplayer"],
@@ -117,7 +112,6 @@ def main():
     game_menu = menu.Menu()
     game_config = game_menu.display()
     game_menu.stop_music()
-    print(game_config)
 
     board_orientation = game_config.get("board_orientation", [0, 0, 0, 0, 0, 0])
 

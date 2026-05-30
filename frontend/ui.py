@@ -123,8 +123,6 @@ class Interface:
         self.update_ui()
 
     def update_ui(self):
-        print(f"Current phase : {self.game.phase}")
-        print(f"Current sub phase : {self.game.sub_phase}")
         if (
             self.game.phase == "mouvement"
             and not self.game.has_pawns_on_board(
@@ -280,10 +278,6 @@ class Interface:
             )
             
             grid = self.game.boards.get_top().to_2d_grid()
-            for row in grid:
-                print(row)
-                
-            
             for i in range(rows):
                 for j in range(columns):
                     if grid[i][j] is None:
@@ -451,7 +445,6 @@ class Interface:
                     return
 
             # LOCAL ou HOST : on applique directement (logique d'origine)
-            print(f"Phase : {self.game.phase}")
             action = None
             if self.game.phase == "placement":
                 self.game.try_place_current_pawn(row, col)
@@ -813,8 +806,6 @@ class Interface:
 
             # Action à réaliser (subphase)
             if self.game.phase != "placement": 
-                        
-                print(self.game.sub_phase)
                 match self.game.sub_phase :
                     case "choix_disque":
                         text_title_subphase = f"Joueur {pnb} choisit un jeton :"
@@ -942,7 +933,7 @@ class Interface:
                 case None :
                     to_show = to_show
                 case _ : 
-                    print("⚠︎ Error : 'to_show' inconnu ⚠︎")
+                    print("Error : 'to_show' inconnu")
 
         canvas_right.bind('<Configure>', draw_right)
 

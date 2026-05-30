@@ -163,20 +163,6 @@ class Board:
             grid_2d[ligne][colonne] = value
         return grid_2d
 
-    def print_grid(self) -> None:
-        """Affiche la grille (dev only)"""
-        for ligne in self.to_2d_grid():
-            cells = []
-            for value in ligne:
-                if value is None:
-                    cells.append("  ")
-                elif value == 0:
-                    cells.append(" .")
-                else:
-                    cells.append(str(value).rjust(2))
-            print(" ".join(cells))
-            print()
-
     def is_dotted_direction_from_center(self, q: int, r: int) -> bool:
         """True si (q, r) est aligne avec le centre via un chemin pointille (J)."""
         if (q, r) == self.center:
@@ -199,7 +185,6 @@ class Board:
             if self.grid.get(cell) == "J":
                 return True
         return False
-   
 
 class BoardPile:
     def __init__(self, 
