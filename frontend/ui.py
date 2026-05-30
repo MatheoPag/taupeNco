@@ -133,6 +133,7 @@ class Interface:
         pad = self._center_pad
         STEP_X = self._center_STEP_X
         STEP_Y = self._center_STEP_Y
+
         for player in self.game.players:
             for pawn in player.pawns:
                 if pawn.state != "alive" or pawn.position is None:
@@ -1008,6 +1009,47 @@ class Interface:
                     outline=self.colors['border'],
                     tags='pawns',
                 )
+
+        self._draw_selected_pawn_circle()
+
+    def _draw_selected_pawn_circle(self) -> None:
+        if self._board_canvas is None:
+            return
+        if self.game.phase != "mouvement":
+            return
+
+        current_player = self.game.players[self.game.current_player]
+        pawn_index = current_player.pawn_selected
+        if pawn_index is None or not (0 <= pawn_index < len(current_player.pawns)):
+            return
+
+        pawn = current_player.pawns[pawn_index]
+        if pawn.state != "alive" or pawn.position is None:
+            return
+
+        x = self._center_pad_x + pawn.position[1] * self._center_STEP_X
+        y = self._center_pad_y + pawn.position[0] * self._center_STEP_Y
+        outline_color = self._get_selection_outline_color()
+
+        self._board_canvas.create_oval(
+            x - 18, y - 18, x + 18, y + 18,
+            outline=outline_color,
+            width=3,
+            tags='pawns',
+        )
+
+    def _get_selection_outline_color(self) -> str:  #/couleeur de cercle a changer /
+        board_color_key = getattr(self, '_current_board_color', None)
+        if board_color_key in ("layer0", "layer0c"):
+            return self.colors['red']
+        if board_color_key in ("layer1", "layer1c"):
+            return self.colors['black']
+        if board_color_key in ("layer2", "layer2c"):
+            return self.colors['black']
+        if board_color_key in ("layer3", "layer3c"):
+            return self.colors['white']
+        return self.colors['white']
+
     def _is_disk_shuffle_authority(self) -> bool:
             """Seul l'hote (ou le local) melange les disques."""
             return self.role in ("local", "host")
