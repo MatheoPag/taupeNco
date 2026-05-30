@@ -2,13 +2,15 @@ from . import disk
 from . import pawn
 
 class Player:
-    def __init__(self, id: int, name: str, color: str, nb_pawns: int) -> None:
+    def __init__(
+        self, id: int, name: str, color: str, nb_pawns: int, nb_boards: int = 4
+    ) -> None:
         self.id = id
         self.name = name
         self.color = color
         self.last_pawn_moved = -1
         self.pawns = [pawn.Pawn(i, color) for i in range(1, nb_pawns + 1)]
-        self.disks = disk.Disks(color)
+        self.disks = disk.Disks(color, nb_boards)
         self.disk_selected = None
         self.pawn_selected = None
 

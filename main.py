@@ -7,10 +7,20 @@ from system.server import GameServer
 from system.client import GameClient
 
 
+def start_from_save(game_instance):
+    game_ui = ui.Interface(game_instance)
+    game_ui.displayInterface()
+
+
 def start_local(nbplayer, bot=False, nb_boards=4, board_orientation=None):
     if board_orientation is None:
         board_orientation = [0, 0, 0, 0, 0, 0]
-    game_instance = game_entity.Game(nbplayer, 1 if bot else 0, nb_boards, board_orientation)
+    game_instance = game_entity.Game(
+            nbplayer,
+            1 if bot else 0, 
+            nb_boards, 
+            board_orientation
+        )
     game_ui = ui.Interface(game_instance)
     game_ui.displayInterface()
 
@@ -106,9 +116,18 @@ def start_client(target_ip):
 def main():
     game_menu = menu.Menu()
     game_config = game_menu.display()
+    game_menu.stop_music()
     print(game_config)
 
     board_orientation = game_config.get("board_orientation", [0, 0, 0, 0, 0, 0])
+
+    if game_config.get("connexionmode") == "save":
+        loaded_game = game_config.get("loaded_game")
+        if loaded_game is not None:
+            start_from_save(loaded_game)
+        else:
+            print("Aucune partie chargee.")
+        return
 
     if game_config["connexionmode"] == "local":
         if game_config["gamemode"] == "classic" or game_config["gamemode"] == "custom":
