@@ -59,9 +59,6 @@ def start_host(nbplayer, host_ip, nb_boards=4, board_orientation=None):
 
     print(f"Partie hébergée - IP à partager : {host_ip}:5555")
     print("Initialisation de la partie...")
-    game_server = GameServer(max_player=nbplayer, host="0.0.0.0", port=5555)
-    game_server.start()
-
     game_instance = game_entity.Game(nbplayer, 0, nb_boards, board_orientation)
 
     game_ui = ui.Interface(
@@ -144,6 +141,7 @@ def start_client(target_ip):
         return "failed"
 
     data = start_data["value"]
+    print(f"Partie démarrée : {data['nbplayer']} joueur(s).")
 
     game_instance = game_entity.Game(
         data["nbplayer"],
