@@ -124,7 +124,6 @@ class GameServer:
             if len(self.clients) < self.required_clients:
                 print("En attente de joueur...")
 
-        print(f"Lobby complet ({self.max_player} joueur(s)). Démarrage de la partie...")
         self._running = False
 
     def stop(self):

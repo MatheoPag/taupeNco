@@ -5,14 +5,12 @@ import argparse
 
 class GameClient:
     def __init__(self, host, port=5555):
-        print(f"Connexion au serveur {host}:{port}...")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self.sock.connect((host, port))
         except OSError as err:
             print(f"Échec de la connexion : {err}")
             raise
-        print("Connexion réussie")
 
     def send_action(self, action: dict):
         self.sock.sendall((json.dumps(action) + "\n").encode('utf-8'))
@@ -37,23 +35,3 @@ class GameClient:
         threading.Thread(target=_run, daemon=True).start()
         # thread separer pour ne pas bloquer tkinter. 
         # daemon=True -> s'arrete quand la fenetre principale se ferme
-    
-
-
-if __name__ == "__main__":
-    #  exemple
-    host = "127.0.0.1"
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", default="client")
-    args = parser.parse_args()
-
-    c = GameClient(host)
-    c.listen(lambda msg: print(json.dumps(msg, ensure_ascii=False)))
-
-
-    while True:
-        text = input("> ").strip()
-        if not text:
-            continue
-        c.send_action({"type": "chat", "from": args.name, "text": text}) 
-

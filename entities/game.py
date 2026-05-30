@@ -199,13 +199,11 @@ class Game:
         if not self.has_pawns_on_board(self.players[self.current_player]):
             return False
         if self.sub_phase == "choix_disque":
-            print("choix du disque")
             self.legal_moves = None
             cur_player = self.players[self.current_player]
             cur_player.disk_selected = disk_selected
             disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
-            print(f"disque selectionne : {disk}")
             if disk[0] == 0:
                 self._finish_disk_cycle(cur_player, shuffle_disks)
                 update_ui()
@@ -223,7 +221,6 @@ class Game:
             self.sub_phase = "choix_disque"
             return False
         if self.sub_phase in ("choix_pion", "deplacement"):
-            print("choix du pion")
             current_player = self.players[self.current_player]
             player_pawns = current_player.pawns
             pawn_found = None
@@ -237,7 +234,6 @@ class Game:
                     pawn_found = (pawn, idx)
                     break
             if not pawn_found:
-                print("Le pion selectionne n'appartient pas au joueur courant.")
                 return False
             current_player.pawn_selected = pawn_found[1]
             self.legal_moves = self.possible_moves(
@@ -317,7 +313,6 @@ class Game:
         winner = self.get_player_at_center()
         if winner is None:
             return False
-        print(f"{winner.name} a gagne.")
         self.winner = winner
         self.phase = "victoire"
         self.sub_phase = None
@@ -341,10 +336,6 @@ class Game:
             self.check_victory()
             return
         top = self.boards.get_top()
-        print(
-            f"Tous les trous du plateau {top.name} sont remplis : "
-            "descente au plateau inferieur."
-        )
 
         for p in self.players:
             for pawn in p.pawns:
@@ -434,28 +425,23 @@ class Game:
             self.sub_phase = "choix_disque"
             return False
         if self.sub_phase == "deplacement":
-            print("deplacement")
             cur = self.players[self.current_player]
 
             if (
                 cur.pawn_selected is None
                 or not (0 <= cur.pawn_selected < len(cur.pawns))
             ):
-                print("le pion selectionne n'est pas valide")
                 return False
             pawn = cur.pawns[cur.pawn_selected]
             if pawn.position is None:
-                print("le pion n'est pas sur le plateau")
                 return False
 
             if cur.disk_selected is None:
-                print("le disque selectionne n'est pas valide")
                 return False
 
             if (row, col) not in self.possible_moves(
                 cur.pawn_selected, cur.disk_selected
             ):
-                print("le deplacement n'est pas valide")
                 return False
 
             board = self.boards.get_top()
@@ -463,12 +449,9 @@ class Game:
                 self.legal_moves = None
                 q2, r2 = board.from_2d_to_axial(row, col)
                 if board.grid.get((q2, r2)) == "S":
-                    print(f"Case speciale : {cur.name} rejoue.")
                     self.sub_phase = "rejouer"
                     self._finish_disk_cycle(cur, shuffle_disks, advance_player=False)
                 else:
                     self._finish_disk_cycle(cur, shuffle_disks)
                 return True
-            print("le deplacement n'est pas valide car la case est \
-                occupee par un autre pion")
         return False
