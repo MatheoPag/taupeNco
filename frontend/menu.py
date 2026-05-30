@@ -78,7 +78,6 @@ class Menu:
         }
         self._pending_gamemode = None
         self._pending_nbboard = None
-        self._board_position_return_frame = None
 
         # Lancement de la musique du menu
         self.play_music()
@@ -140,7 +139,8 @@ class Menu:
             frame_button_bot,
             text="Solo",
             font=('', 16),
-            bg=self.colors['grey'],
+            fg=self.colors['border'],
+            bg=self.colors['layer0'],
             bd=0,
             relief='flat',
         )
@@ -155,7 +155,8 @@ class Menu:
             frame_button_local,
             text="Multijoueur local",
             font=('', 16),
-            bg=self.colors['grey'],
+            fg=self.colors['border'],
+            bg=self.colors['layer2'],
             bd=0,
             relief='flat',
         )
@@ -172,36 +173,47 @@ class Menu:
             frame_button_online,
             text="Multijoueur en ligne",
             font=('', 16),
-            bg=self.colors['grey'],
+            fg=self.colors['white'],
+            bg=self.colors['layer3'],
             bd=0,
             relief='flat',
         )
         button_online.pack(fill='both', expand=True)
 
-            # 4 - Quitter le jeu / import sauvegarde
-        frame_button_import = tk.Frame(
-            frame_buttons, bg=self.colors['border'], padx=2, pady=2
+            # 4 - Import sauvegarde / quitter le jeu (même ligne)
+        frame_row_import_quit = tk.Frame(
+            frame_buttons, bg=self.colors['background']
         )
-        frame_button_import.pack(padx=70, pady=0, fill='x', expand=True)
+        frame_row_import_quit.pack(padx=50, pady=0, ipady=5, fill='x', expand=True)
+        frame_row_import_quit.grid_columnconfigure(0, weight=1)
+        frame_row_import_quit.grid_columnconfigure(1, weight=1)
+
+        frame_button_import = tk.Frame(
+            frame_row_import_quit, bg=self.colors['border'], padx=2, pady=2
+        )
+        frame_button_import.grid(row=0, column=0, sticky='nsew', padx=(0, 4))
         button_import = tk.Button(
             frame_button_import,
-            text="Continuer une partie",
+            text="Importer ↓",
             font=('', 16),
-            bg=self.colors['green'],
+            fg=self.colors['border'],
+            bg=self.colors['grey'],
             bd=0,
+         
             relief='flat',
         )
         button_import.pack(fill='both', expand=True)
 
         frame_button_quit = tk.Frame(
-            frame_buttons, bg=self.colors['border'], padx=2, pady=2
+            frame_row_import_quit, bg=self.colors['border'], padx=2, pady=2
         )
-        frame_button_quit.pack(padx=70, pady=0, fill='x', expand=True)
+        frame_button_quit.grid(row=0, column=1, sticky='nsew', padx=(4, 0))
         button_quit = tk.Button(
             frame_button_quit,
-            text="Quitter le jeu",
+            text="Quitter",
             font=('', 16),
-            bg=self.colors['red'],
+            fg=self.colors['border'],
+            bg=self.colors['layer1'],
             bd=0,
             relief='flat',
             cursor='pirate'
@@ -243,21 +255,6 @@ class Menu:
             parent=self.frame_board_position,
             on_finish=self._finish_board_position,
         )
-
-        frame_button_back_board = tk.Frame(
-            self.frame_board_position, bg=self.colors['border'], padx=2, pady=2
-        )
-        frame_button_back_board.grid(row=1, column=0, sticky='ew', padx=20, pady=10)
-        button_back_board = tk.Button(
-            frame_button_back_board,
-            text="Retour",
-            font=('', 16),
-            bg=self.colors['layer0'],
-            bd=0,
-            relief='flat',
-            command=self._leave_board_position,
-        )
-        button_back_board.pack()
         
         # FENÊTRE MULTIJOUEUR
         frame_multiplayer_mode = tk.Frame(self.root, bg=self.colors['background'])
@@ -582,22 +579,14 @@ class Menu:
             self.game_config['iptarget'] = 'None'
         self.root.destroy()
 
-    def _show_board_position(self, return_frame, gamemode, nbboard):
+    def _show_board_position(self, gamemode, nbboard):
         """Affiche la page d'orientation des plateaux avant de lancer la partie."""
-        self._board_position_return_frame = return_frame
         self._pending_gamemode = gamemode
         self._pending_nbboard = nbboard
         self.root.geometry("800x800")
         self.root.minsize(800, 800)
         self.root.maxsize(800, 800)
         self.frame_board_position.tkraise()
-
-    def _leave_board_position(self):
-        self.root.geometry("360x480")
-        self.root.minsize(360, 480)
-        self.root.maxsize(360, 480)
-        if self._board_position_return_frame is not None:
-            self._board_position_return_frame.tkraise()
 
     def _finish_board_position(self, orientations):
         if self._pending_nbboard == 4 and len(orientations) == 4:
@@ -608,20 +597,20 @@ class Menu:
     # CONFIG LOCAL 
         # Renvoi la configuration de la partie (locale)
     def create_local_classic(self):
-        self._show_board_position(self.frame_local_mode, 'classic', 4)
+        self._show_board_position('classic', 4)
 
     def create_local_custom(self):
         self._start_game('custom', self.game_config['nbboard'].get())
 
     def create_solo_classic(self):
-        self._show_board_position(self.frame_solo_mode, 'solobot', 4)
+        self._show_board_position('solobot', 4)
 
     def create_solo_custom(self):
         self._start_game('solobot', self.game_config['nbboard'].get())
 
     # CONFIG MULTIJOUEUR (hôte)
     def create_multiplayer_classic(self):
-        self._show_board_position(self.frame_multiplayer_game_mode, 'classic', 4)
+        self._show_board_position('classic', 4)
 
     def create_multiplayer_custom(self):
         self._start_game('custom', self.game_config['nbboard'].get())

@@ -41,6 +41,7 @@ class Interface:
             'layer101c' : '#B1B8C4',
             'layer102' : '#795640',
             'layer102c' : '#C39A7E',
+            'layer103' : 'red',
             'layer0' : '#4E7F6E',
             'layer0c' : '#8DCAAA',
             'layer1' : '#B85553',
@@ -49,6 +50,7 @@ class Interface:
             'layer2c' : '#F0CC6E',
             'layer3' : '#3F6E9E',
             'layer3c' : '#8CB9DC',
+            'layer4' : '#FFFFFF',
 
             # Joueur
             'player1' : '#B89FD8',
@@ -1146,6 +1148,8 @@ class Interface:
         frame_boutons = tk.Frame(popup, bg=self.colors['background'])
         frame_boutons.pack()
 
+        online = self.role in ("host", "client")
+
         tk.Button(
             frame_boutons, text="Annuler",
             bg=self.colors['grey'], bd=0, relief='flat',
@@ -1153,17 +1157,18 @@ class Interface:
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
-            frame_boutons, text="Quitter sans sauvegarder",
+            frame_boutons,
+            text="Quitter" if online else "Quitter sans sauvegarder",
             bg=self.colors['red'], bd=0, relief='flat',
             command=self.root.destroy
         ).grid(row=0, column=1, padx=5)
 
-        tk.Button(
-            frame_boutons, text="Quitter et sauvegarder",
-            bg=self.colors['green'], bd=0, relief='flat',
-            command=lambda: self._quit_and_save(popup),
-            state="disabled" if self.role == "client" else "normal",
-        ).grid(row=0, column=2, padx=5)
+        if not online:
+            tk.Button(
+                frame_boutons, text="Quitter et sauvegarder",
+                bg=self.colors['green'], bd=0, relief='flat',
+                command=lambda: self._quit_and_save(popup),
+            ).grid(row=0, column=2, padx=5)
 
     def _quit_and_save(self, popup: tk.Toplevel) -> None:
         save_path = filedialog.asksaveasfilename(

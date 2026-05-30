@@ -15,8 +15,8 @@ class Board:
 
 
         LAYER_UI_INDEX = {
-            "Terre": 102,
             "Pierre": 101,
+            "Terre": 102,
             "Surface": 0,
             "Terre arable": 1,
             "Sous-sol": 2,
@@ -192,7 +192,7 @@ class BoardPile:
                 board_orientation: list[int], 
                 nb_boards: int) -> None:
         self._markers_by_layer = {
-            "Terre" : {
+            "Pierre" : {
                 "X": [
                         (2, -4), (3, -4),
                         (-1, -3), (0, -3), (2, -3),
@@ -206,7 +206,7 @@ class BoardPile:
                 ],
                 "S": [],
             },
-            "Pierre" : {
+            "Terre" : {
                 "X": [
                         (4, -4),
                         (1, -3), (3, -3), (4, -3),
@@ -252,8 +252,8 @@ class BoardPile:
         self.pile = []
 
         LAYER_ORDER = [
-            "Terre",
             "Pierre",
+            "Terre",
             "Surface",
             "Terre arable",
             "Sous-sol",
