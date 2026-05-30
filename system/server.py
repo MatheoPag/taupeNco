@@ -13,6 +13,8 @@ class GameServer:
         self.required_clients = max(0, max_player - 1)
         self.clients = []
         self._running = False
+        # Callback appele a chaque connexion (current, max_player)
+        self.on_player_joined = None
         # 0 est reserve a l'hote, les clients reseau commencent a 1
         self._next_player_id = 1
         # Callback appele quand un client envoie une action (fournie par main.py)
@@ -35,6 +37,16 @@ class GameServer:
                 client.close()
             except OSError:
                 pass
+
+    def _notify_lobby_update(self, current: int) -> None:
+        message = {
+            "type": "lobby_update",
+            "current": current,
+            "max": self.max_player,
+        }
+        self.send_data(message)
+        if self.on_player_joined is not None:
+            self.on_player_joined(current, self.max_player)
 
     def handle_client(self, conn, player_id):
         data_max_size = 4096
@@ -80,6 +92,7 @@ class GameServer:
         """
         self._running = True
         print("En attente de joueur...")
+        self._notify_lobby_update(1)
 
         while len(self.clients) < self.required_clients:
             conn, addr = self.server.accept()
@@ -107,6 +120,7 @@ class GameServer:
                 f"Joueur connecté ({len(self.clients)}/{self.required_clients}) "
                 f": {addr[0]}:{addr[1]} -> ID {player_id}"
             )
+            self._notify_lobby_update(1 + len(self.clients))
             if len(self.clients) < self.required_clients:
                 print("En attente de joueur...")
 

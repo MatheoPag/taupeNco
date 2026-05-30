@@ -1157,6 +1157,8 @@ class Interface:
         frame_boutons = tk.Frame(popup, bg=self.colors['background'])
         frame_boutons.pack()
 
+        online = self.role in ("host", "client")
+
         tk.Button(
             frame_boutons, text="Annuler",
             bg=self.colors['grey'], bd=0, relief='flat',
@@ -1164,17 +1166,18 @@ class Interface:
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
-            frame_boutons, text="Quitter sans sauvegarder",
+            frame_boutons,
+            text="Quitter" if online else "Quitter sans sauvegarder",
             bg=self.colors['red'], bd=0, relief='flat',
             command=self.root.destroy
         ).grid(row=0, column=1, padx=5)
 
-        tk.Button(
-            frame_boutons, text="Quitter et sauvegarder",
-            bg=self.colors['green'], bd=0, relief='flat',
-            command=lambda: self._quit_and_save(popup),
-            state="disabled" if self.role == "client" else "normal",
-        ).grid(row=0, column=2, padx=5)
+        if not online:
+            tk.Button(
+                frame_boutons, text="Quitter et sauvegarder",
+                bg=self.colors['green'], bd=0, relief='flat',
+                command=lambda: self._quit_and_save(popup),
+            ).grid(row=0, column=2, padx=5)
 
     def _quit_and_save(self, popup: tk.Toplevel) -> None:
         save_path = filedialog.asksaveasfilename(
