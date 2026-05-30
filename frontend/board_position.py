@@ -177,14 +177,8 @@ class Boards:
     def hexa_board(self, frame, layer):
         # Permet de retrouver l'image, peu importe le cwd (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
         cwd = os.path.dirname(__file__)
-        png_path = os.path.join(cwd, "ressources/pictures/hexa-test.png")
-
-        png = { # Change la couleur du png en fonction de la couche
-            0 : png_path,
-            1 : png_path,
-            2 : png_path,
-            3 : png_path
-        }
+        tmp = f"ressources/pictures/hexa{layer}.png"
+        png_path = os.path.join(cwd, tmp)
         
         self.layer_names = {
             0: "Surface",
@@ -194,10 +188,10 @@ class Boards:
         }
 
         w, h = 200, 200
-        img = Image.open(png[layer])
+        img = Image.open(png_path)
         self.stock_images[layer] = img
+        photo = ImageTk.PhotoImage(img.resize((w, h)))
 
-        image_board = tk.PhotoImage(file=png[layer]).zoom(2).subsample(5)
         canvas_board = tk.Canvas(
                 frame, 
                 width=w, 
@@ -206,8 +200,8 @@ class Boards:
                 bd=0, 
                 highlightthickness=0
             )
-        canvas_board.create_image(w/2, h/2, image=image_board)
-        canvas_board.image = image_board
+        canvas_board.create_image(w // 2, h // 2, image=photo, anchor='center')
+        canvas_board.image = photo
         canvas_board.pack(expand='YES')
         label = tk.Label(
                 frame,
@@ -217,9 +211,7 @@ class Boards:
             )
         label.pack()
         self.stock_canva[layer] = canvas_board
-        self.stock_images[layer] = img
-        
-        
+
         frame_buttons = tk.Frame(frame, bg=frame['bg'])
         frame_buttons.pack(pady=10)
         

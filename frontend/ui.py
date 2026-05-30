@@ -41,6 +41,7 @@ class Interface:
             'layer101c' : '#B1B8C4',
             'layer102' : '#795640',
             'layer102c' : '#C39A7E',
+            'layer103' : 'red',
             'layer0' : '#4E7F6E',
             'layer0c' : '#8DCAAA',
             'layer1' : '#B85553',
@@ -49,6 +50,7 @@ class Interface:
             'layer2c' : '#F0CC6E',
             'layer3' : '#3F6E9E',
             'layer3c' : '#8CB9DC',
+            'layer4' : '#FFFFFF',
 
             # Joueur
             'player1' : '#B89FD8',
