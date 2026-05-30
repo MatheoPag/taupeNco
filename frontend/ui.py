@@ -1079,7 +1079,7 @@ class Interface:
             else:
                 self.root.destroy()
 
-
+    
     def _popup_quitter(self):
         popup = tk.Toplevel(self.root)
         popup.title("Quitter")
@@ -1116,32 +1116,86 @@ class Interface:
             state="disabled" if self.role == "client" else "normal",
         ).grid(row=0, column=2, padx=5)
 
-    def _quit_and_save(self, popup: tk.Toplevel) -> None:
-        save_path = filedialog.asksaveasfilename(
-            parent=self.root,
-            title="Enregistrer la partie",
-            defaultextension=SAVE_EXTENSION,
-            filetypes=TANDC_FILETYPES,
-            initialdir=SAVE_PATH.parent,
-            initialfile="partie.tandc",
-        )
-        if not save_path:
+    def _redraw_center_pawns(self):
+        if self._board_canvas is None:
+            return
+        self._board_canvas.delete('pawns')
+        step_x = self._center_STEP_X
+        step_y = self._center_STEP_Y
+
+        if self.game.phase == "mouvement" and self.game.sub_phase == "deplacement":
+            joueur_actuel = self.game.players[self.game.current_player]
+            pion_selectionne = joueur_actuel.pawn_selected
+            if pion_selectionne is not None:
+                pion = joueur_actuel.pawns[pion_selectionne]
+                nombre_de_pas = joueur_actuel.disks.get_disks()[joueur_actuel.disk_selected][0]
+                for ligne, colonne in self.game.get_possible_moves(pion, nombre_de_pas):
+                    x = self._center_pad_x + colonne * step_x
+                    y = self._center_pad_y + ligne * step_y
+                    self._board_canvas.create_oval(
+                        x - 15, y - 15, x + 15, y + 15,
+                        outline=self.colors['white'],
+                        fill='',
+                        width=3,
+                        tags='pawns'
+                    )
+
+        for joueur in self.game.players:
+            for pion in joueur.pawns:
+                if pion.state != "alive" or pion.position is None:
+                    continue
+                x = self._center_pad_x + pion.position[1] * step_x
+                y = self._center_pad_y + pion.position[0] * step_y
+                self._board_canvas.create_oval(
+                    x - 10, y - 10, x + 10, y + 10,
+                    fill=self.colors[joueur.name.lower().replace(" ", "")],
+                    outline=self.colors['border'],
+                    tags='pawns',
+                )
+
+        self._draw_selected_pawn_circle()
+
+    def _draw_selected_pawn_circle(self) -> None:
+        if self._board_canvas is None:
+            return
+        if self.game.phase != "mouvement":
             return
 
-        try:
-            save_game(self.game, ensure_tandc_path(save_path))
-        except OSError as err:
-            tk.messagebox.showerror(
-                "Erreur de sauvegarde",
-                f"Impossible d'enregistrer la partie :\n{err}",
-            )
+        current_player = self.game.players[self.game.current_player]
+        pawn_index = current_player.pawn_selected
+        if pawn_index is None or not (0 <= pawn_index < len(current_player.pawns)):
             return
-        popup.destroy()
-        self.root.destroy()
+
+        pawn = current_player.pawns[pawn_index]
+        if pawn.state != "alive" or pawn.position is None:
+            return
+
+        x = self._center_pad_x + pawn.position[1] * self._center_STEP_X
+        y = self._center_pad_y + pawn.position[0] * self._center_STEP_Y
+        outline_color = self._get_selection_outline_color()
+
+        self._board_canvas.create_oval(
+            x - 18, y - 18, x + 18, y + 18,
+            outline=outline_color,
+            width=3,
+            tags='pawns',
+        )
+
+    def _get_selection_outline_color(self) -> str:  #/couleeur de cercle a changer /
+        board_color_key = getattr(self, '_current_board_color', None)
+        if board_color_key in ("layer0", "layer0c"):
+            return self.colors['red']
+        if board_color_key in ("layer1", "layer1c"):
+            return self.colors['black']
+        if board_color_key in ("layer2", "layer2c"):
+            return self.colors['black']
+        if board_color_key in ("layer3", "layer3c"):
+            return self.colors['white']
+        return self.colors['white']
 
     def _is_disk_shuffle_authority(self) -> bool:
-        """Seul l'hote (ou le local) melange les disques."""
-        return self.role in ("local", "host")
+            """Seul l'hote (ou le local) melange les disques."""
+            return self.role in ("local", "host")
 
     def _cell_contains_current_player_pawn(self, row: int, col: int) -> bool:
         current_player = self.game.players[self.game.current_player]
