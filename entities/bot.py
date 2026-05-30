@@ -79,8 +79,8 @@ def _zero_disk_options(game) -> list[int]:
 
 def play_movement(game) -> bool:
     if game.is_all_pawns_in_holes():
-        game.current_player = (game.current_player + 1) % len(game.players)
-        game.begin_player_turn()
+        cur = game.players[game.current_player]
+        game._finish_disk_cycle(cur, shuffle_disks=True)
         return True
 
     options = _movement_options(game)
@@ -88,22 +88,22 @@ def play_movement(game) -> bool:
         zero_disks = _zero_disk_options(game)
         if not zero_disks:
             return False
-        game.sub_phase = "choix_disque"
+        game.enter_disk_choice_phase(shuffle_disks=True)
         return game.try_choose_disk(random.choice(zero_disks), lambda: None)
 
     disk_idx, pawn_idx, (row, col) = random.choice(options)
     pawn = game.players[game.current_player].pawns[pawn_idx]
     pr, pc = pawn.position
 
-    game.sub_phase = "choix_disque"
+    game.enter_disk_choice_phase(shuffle_disks=True)
     if not game.try_choose_disk(disk_idx, lambda: None):
         return False
     if not game.try_choose_pawn(pr, pc):
-        game.sub_phase = "choix_disque"
+        game.enter_disk_choice_phase(shuffle_disks=True)
         return False
     if game.is_player_blocked():
-        game.current_player = (game.current_player + 1) % len(game.players)
-        game.begin_player_turn()
+        cur = game.players[game.current_player]
+        game._finish_disk_cycle(cur, shuffle_disks=True)
         return True
     if not game.try_move_chosen_pawn_to(row, col):
         return False
@@ -122,8 +122,8 @@ def play_turn(game) -> bool:
         if game.sub_phase == "rejouer":
             return play_replay_turn(game)
         if game.sub_phase == "passer_tour":
-            game.current_player = (game.current_player + 1) % len(game.players)
-            game.begin_player_turn()
+            cur = game.players[game.current_player]
+            game._finish_disk_cycle(cur, shuffle_disks=True)
             return True
         return play_movement(game)
     return False

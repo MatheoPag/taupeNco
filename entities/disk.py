@@ -34,6 +34,9 @@ class Disks:
         for i in range(len(self.__disks)):
             self.__disks[i][1] = False
 
+    def has_hidden_disk(self) -> bool:
+        return any(not disk[1] for disk in self.__disks)
+
     def show_disk(self, disk: int) -> int | None:
         if self.__disks[disk][1]:
             return None

@@ -166,22 +166,53 @@ class Game:
             self.begin_player_turn()
         return True
 
-    def _finish_disk_cycle(
-        self, cur, shuffle_disks: bool = True, advance_player: bool = True
-    ) -> None:
-        """Melange les disques si besoin, puis passe au joueur suivant."""
-        if cur.disks.is_all_disk_visible():
+    def _ensure_disks_shuffled_if_complete(
+        self, player, shuffle_disks: bool = True
+    ) -> bool:
+        """Tour de securite : retourne et melange si tous les disques sont visibles."""
+        if not player.disks.is_all_disk_visible():
+            return False
+        player.disks.hide_all_disks()
+        player.disk_selected = None
+        if shuffle_disks:
+            player.disks.mix_disks()
+            self._pending_disk_sync = {
+                "player_id": player.id,
+                "disks": player.disks.get_disks(),
+            }
+        return True
+
+    def prepare_disk_choice(self, shuffle_disks: bool = True) -> bool:
+        """Verifie l'etat des disques juste avant le choix."""
+        cur = self.players[self.current_player]
+        self._ensure_disks_shuffled_if_complete(cur, shuffle_disks)
+        if not cur.disks.has_hidden_disk():
             cur.disks.hide_all_disks()
+            cur.disk_selected = None
             if shuffle_disks:
                 cur.disks.mix_disks()
                 self._pending_disk_sync = {
                     "player_id": cur.id,
                     "disks": cur.disks.get_disks(),
                 }
+        cur.disk_selected = None
+        cur.pawn_selected = None
+        self.legal_moves = None
+        return cur.disks.has_hidden_disk()
+
+    def enter_disk_choice_phase(self, shuffle_disks: bool = True) -> None:
+        self.sub_phase = "choix_disque"
+        self.prepare_disk_choice(shuffle_disks)
+
+    def _finish_disk_cycle(
+        self, cur, shuffle_disks: bool = True, advance_player: bool = True
+    ) -> None:
+        """Melange les disques si besoin, puis passe au joueur suivant."""
+        self._ensure_disks_shuffled_if_complete(cur, shuffle_disks)
         if advance_player:
             self.bonus_move = False
             self.current_player = (self.current_player + 1) % len(self.players)
-            self.begin_player_turn()
+            self.begin_player_turn(shuffle_disks=shuffle_disks)
         self.check_board_descent()
         if self.phase != "victoire":
             self.check_victory()
@@ -193,16 +224,21 @@ class Game:
         if self.phase != "mouvement":
             return False
         if self.sub_phase is None:
-            self.sub_phase = "choix_disque"
+            self.enter_disk_choice_phase(shuffle_disks)
         if self.sub_phase == "passer_tour":
             return False
         if not self.has_pawns_on_board(self.players[self.current_player]):
             return False
         if self.sub_phase == "choix_disque":
-            self.legal_moves = None
+            self.prepare_disk_choice(shuffle_disks)
             cur_player = self.players[self.current_player]
+            disks = cur_player.disks.get_disks()
+            if not (0 <= disk_selected < len(disks)):
+                return False
+            disk = disks[disk_selected]
+            if disk[1]:
+                return False
             cur_player.disk_selected = disk_selected
-            disk = cur_player.disks.get_disks()[disk_selected]
             disk[1] = True
             if disk[0] == 0:
                 self._finish_disk_cycle(cur_player, shuffle_disks)
@@ -359,20 +395,21 @@ class Game:
             if self.current_player == start:
                 break
 
-    def begin_player_turn(self) -> None:
+    def begin_player_turn(self, shuffle_disks: bool = True) -> None:
         """Debut de tour : choix disque ou proposition de passer si ineligible."""
         self._skip_eliminated_players()
-        if not self.has_pawns_on_board(self.players[self.current_player]):
+        cur = self.players[self.current_player]
+        if not self.has_pawns_on_board(cur):
             self.sub_phase = "passer_tour"
         elif self.is_all_pawns_in_holes():
             self.sub_phase = "passer_tour"
         else:
-            self.sub_phase = "choix_disque"
+            self.enter_disk_choice_phase(shuffle_disks)
 
-    def start_bonus_turn(self) -> None:
+    def start_bonus_turn(self, shuffle_disks: bool = True) -> None:
         """Second deplacement apres une case speciale (interdit de finir sur S)."""
         self.bonus_move = True
-        self.begin_player_turn()
+        self.begin_player_turn(shuffle_disks=shuffle_disks)
 
 
     def possible_moves(self, pawn_index, disk_index: int) -> list[tuple[int, int]]:
