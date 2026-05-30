@@ -380,6 +380,32 @@ class Game:
         return cases_possibles
 
 
+    def get_possible_moves(self, pawn, n: int) -> list[tuple[int, int]]:
+        if pawn.position is None:
+            return []
+        board = self.boards.get_top()
+        q1, r1 = board.from_2d_to_axial(pawn.position[0], pawn.position[1])
+        cases_possibles = []
+        for (q2, r2) in board.grid:
+            row, col = board.axial_to_2d(q2, r2)
+            dist = board.hex_distance(q1, r1, q2, r2)
+            if dist != n:
+                continue
+            if not board.is_straight_line(q1, r1, q2, r2):
+                continue
+            chemin_bloque = False
+            for pq, pr in board.line_path(q1, r1, q2, r2):
+                pl, pc = board.axial_to_2d(pq, pr)
+                if self.cell_occupied_by_pawn(pl, pc):
+                    chemin_bloque = True
+                    break
+            if chemin_bloque:
+                continue
+            if not self.is_legal_target_cell(row, col, "mouvement"):
+                continue
+            cases_possibles.append((row, col))
+        return cases_possibles
+
     def try_move_chosen_pawn_to(
         self, row: int, col: int, shuffle_disks: bool = True
     ) -> bool:

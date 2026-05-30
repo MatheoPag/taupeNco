@@ -936,7 +936,7 @@ class Interface:
             else:
                 self.root.destroy()
 
-
+    
     def _popup_quitter(self):
         popup = tk.Toplevel(self.root)
         popup.title("Quitter")
@@ -972,9 +972,45 @@ class Interface:
             command=lambda: print("... sauvegarder ...")
         ).grid(row=0, column=2, padx=5)
 
+    def _redraw_center_pawns(self):
+        if self._board_canvas is None:
+            return
+        self._board_canvas.delete('pawns')
+        step_x = self._center_STEP_X
+        step_y = self._center_STEP_Y
+
+        if self.game.phase == "mouvement" and self.game.sub_phase == "deplacement":
+            joueur_actuel = self.game.players[self.game.current_player]
+            pion_selectionne = joueur_actuel.pawn_selected
+            if pion_selectionne is not None:
+                pion = joueur_actuel.pawns[pion_selectionne]
+                nombre_de_pas = joueur_actuel.disks.get_disks()[joueur_actuel.disk_selected][0]
+                for ligne, colonne in self.game.get_possible_moves(pion, nombre_de_pas):
+                    x = self._center_pad_x + colonne * step_x
+                    y = self._center_pad_y + ligne * step_y
+                    self._board_canvas.create_oval(
+                        x - 15, y - 15, x + 15, y + 15,
+                        outline=self.colors['white'],
+                        fill='',
+                        width=3,
+                        tags='pawns'
+                    )
+
+        for joueur in self.game.players:
+            for pion in joueur.pawns:
+                if pion.state != "alive" or pion.position is None:
+                    continue
+                x = self._center_pad_x + pion.position[1] * step_x
+                y = self._center_pad_y + pion.position[0] * step_y
+                self._board_canvas.create_oval(
+                    x - 10, y - 10, x + 10, y + 10,
+                    fill=self.colors[joueur.name.lower().replace(" ", "")],
+                    outline=self.colors['border'],
+                    tags='pawns',
+                )
     def _is_disk_shuffle_authority(self) -> bool:
-        """Seul l'hote (ou le local) melange les disques."""
-        return self.role in ("local", "host")
+            """Seul l'hote (ou le local) melange les disques."""
+            return self.role in ("local", "host")
 
     def _cell_contains_current_player_pawn(self, row: int, col: int) -> bool:
         current_player = self.game.players[self.game.current_player]
@@ -994,7 +1030,7 @@ class Interface:
                 self.network.send_data(
                     {"type": "choose_disk", "disk_selected": idx}
                 )
-
+    
     def _send_disk_sync_if_needed(self) -> None:
         payload = self.game.consume_disk_sync()
         if payload is not None and self.role == "host":
