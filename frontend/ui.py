@@ -460,10 +460,10 @@ class Interface:
                         row, col, shuffle_disks=self._is_disk_shuffle_authority()
                     ):
                         action = {"type": "move_chosen_pawn_to", "row": row, "col": col}
-                        self._send_disk_sync_if_needed()
 
             if self.role == "host" and action is not None:
                 self.network.send_data(action)
+                self._send_disk_sync_if_needed()
 
             self.update_ui()
 
@@ -1240,25 +1240,25 @@ class Interface:
         elif action_type == "play_turn":
             self.game.sub_phase = "choix_disque"
         elif action_type == "choose_disk":
-            if self.game.try_choose_disk(
+            self.game.try_choose_disk(
                 msg["disk_selected"],
                 self.update_ui,
                 shuffle_disks=self._is_disk_shuffle_authority(),
-            ):
-                self._send_disk_sync_if_needed()
+            )
         elif action_type == "choose_pawn":
             self.game.try_choose_pawn(msg["row"], msg["col"])
         elif action_type == "move_chosen_pawn_to":
-            if self.game.try_move_chosen_pawn_to(
+            self.game.try_move_chosen_pawn_to(
                 msg["row"],
                 msg["col"],
                 shuffle_disks=self._is_disk_shuffle_authority(),
-            ):
-                self._send_disk_sync_if_needed()
+            )
         elif action_type == "sync_disks":
             player_id = msg["player_id"]
             if 0 <= player_id < len(self.game.players):
                 self.game.players[player_id].disks.set_disks(msg["disks"])
+        if self.role == "host":
+            self._send_disk_sync_if_needed()
         self.update_ui()
 
 
