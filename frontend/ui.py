@@ -41,7 +41,7 @@ class Interface:
             'layer101c' : '#B1B8C4',
             'layer102' : '#795640',
             'layer102c' : '#C39A7E',
-            'layer103' : 'red',
+            'layer103' : '#4E7F6E',
             'layer0' : '#4E7F6E',
             'layer0c' : '#8DCAAA',
             'layer1' : '#B85553',
