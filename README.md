@@ -1,5 +1,7 @@
 # Taupes & Cie (taupeNco)
 
+Avant de lire ce document, nous vous recommandons de consulter le manuel utilisateur pour comprendre comment le jeu se déroule.
+
 Adaptation numérique du jeu de société **Taupes & Cie**, développée en Python avec une interface graphique Tkinter. Le projet couvre une partie locale (solo, multijoueur sur un même poste) et un mode réseau.
 
 ## Contexte et choix techniques
@@ -25,7 +27,7 @@ Le point d'entrée unique est `main.py` : il affiche le menu (`frontend/menu.py`
 taupeNco/
 ├── main.py                 # Point d'entrée, orchestration des modes de jeu
 ├── entities/               # Logique métier (sans interface)
-│   ├── game.py             # Règles, phases, tours, victoire
+│   ├── game.py             # Phases, tours, validation des coups, victoire
 │   ├── board.py            # Grille hexagonale et pile de plateaux
 │   ├── player.py           # Joueur, pions et disques
 │   ├── pawn.py             # Pion (position, état)
@@ -34,7 +36,8 @@ taupeNco/
 ├── frontend/               # Interface graphique
 │   ├── menu.py             # Menu principal et configuration
 │   ├── ui.py               # Interface de jeu (plateau, joueurs, actions)
-│   └── board_position.py   # Orientation des plateaux avant la partie
+│   ├── board_position.py   # Orientation des plateaux avant la partie
+│   └── waiting.py          # Salle d'attente multijoueur (lobby réseau)
 └── system/                 # Services transverses
     ├── server.py           # Serveur TCP (hôte multijoueur)
     ├── client.py           # Client TCP (joueur distant)
@@ -45,34 +48,18 @@ taupeNco/
 
 | Couche | Rôle |
 |--------|------|
-| `entities/` | État du jeu, validation des coups, règles : indépendant de Tkinter |
+| `entities/` | État du jeu, validation des coups : indépendant de Tkinter |
 | `frontend/` | Affichage, clics, envoi des actions réseau |
 | `system/` | Persistance et communication TCP |
-| `main.py` | Câblage entre menu, réseau et interface |
+| `main.py` | Lien entre menu, réseau et interface |
 
-## Logique globale du jeu
+### Cas d'utilisation
 
-### Objectif
+![Diagramme des cas d'utilisation](Documentation/diagrame_cas_utilisation.png)
 
-Atteindre le **centre du dernier plateau** (couche "Roche mère") avec un pion encore en vie. Le premier joueur à y placer une taupe remporte la partie.
+## Logique métier (`entities/game.py`)
 
-### Déroulement d'une partie
-
-1. **Configuration :** nombre de joueurs (1 à 4), nombre de plateaux (3 à 6), orientation des couches, mode local / réseau / sauvegarde.
-2. **Phase de placement :** chaque joueur pose ses taupes à tour de rôle sur des cases libres (hors trous `X`).
-3. **Phase de mouvement :** à chaque tour, choix d'un **disque** (valeur = distance de déplacement en cases hexagonales), choix d'un **pion**, puis déplacement en ligne droite sur le plateau sans traverser de pion adverse.
-4. **Descente de plateau :** lorsque tous les trous (`X`) du plateau courant sont occupés, la couche supérieure est retirée ; les pions qui n'étaient pas sur un trou sont éliminés.
-5. **Victoire :** un joueur occupe le centre `(0, 0)` du dernier plateau restant.
-
-### Marqueurs sur le plateau
-
-| Symbole | Signification |
-|---------|---------------|
-| `X` | Trou : case obligatoire pour survivre à une descente |
-| `S` | Case spéciale : le joueur rejoue un second déplacement (sans terminer sur une autre `S`) |
-| `J` | Chemin pointillé : règle spéciale à deux joueurs sur la roche mère (interdit d'atteindre le centre via ce chemin) |
-
-### Fonctions principales (`entities/game.py`)
+La classe `Game` centralise l'état de la partie (phase, joueur courant, pile de plateaux, sélection disque/pion). Les méthodes exposées sont appelées par l'interface ou le bot ; elles ne dépendent pas de Tkinter.
 
 | Méthode | Rôle |
 |---------|------|
@@ -81,10 +68,29 @@ Atteindre le **centre du dernier plateau** (couche "Roche mère") avec un pion e
 | `try_choose_pawn(row, col)` | Sélection du pion à déplacer |
 | `try_move_chosen_pawn_to(row, col)` | Exécution du déplacement et gestion du tour suivant |
 | `possible_moves(pawn_index, disk_index)` | Calcul des cases atteignables (distance, ligne droite, obstacles) |
+| `_finish_disk_cycle(cur, ...)` | Fin de tour de disque : mélange si cycle complet, passage au joueur suivant |
+| `prepare_disk_choice(...)` / `enter_disk_choice_phase(...)` | Contrôle avant le choix d'un disque (retournement et mélange si besoin) |
 | `check_board_descent()` | Déclenche la descente si tous les trous sont remplis |
 | `check_victory()` | Détecte l'occupation du centre |
 
 L'interface (`frontend/ui.py`) traduit les clics en appels à ces méthodes, puis rafraîchit l'affichage via `update_ui()`.
+
+## Disques de déplacement (`entities/disk.py`)
+
+Chaque joueur possède **6 disques** modélisés par `[valeur, visible]`. La valeur indique la distance de déplacement ; `visible=False` correspond à la face cachée (affichée `?` dans l'UI).
+
+Les valeurs dépendent du nombre de plateaux (`DISK_VALUES_BY_BOARDS` dans `disk.py`) :
+
+| Plateaux | Valeurs |
+|----------|---------|
+| 3 | `[0, 1, 1, 2, 2, 3]` |
+| 4 | `[1, 2, 2, 3, 3, 4]` |
+| 5 | `[0, 1, 2, 2, 3, 4]` |
+| 6 | `[0, 1, 2, 2, 3, 4]` |
+
+Lorsque tous les disques sont visibles, `mix_disks()` les remet face cachée et les mélange. Des garde-fous (`prepare_disk_choice`, `_ensure_disks_shuffled_if_complete`) évitent un état bloqué avec tous les disques déjà retournés.
+
+En multijoueur, **seul l'hôte mélange** ; un message `sync_disks` propage l'état à tous les clients.
 
 ## Le plateau hexagonal
 
@@ -96,9 +102,18 @@ Au fil de l'implémentation, nous avons compris que cette intuition correspondai
 
 ### Implémentation (`entities/board.py`)
 
-Chaque plateau est un hexagone de **rayon 4** (taille 9), représenté en **coordonnées axiales `(q, r)`** avec la contrainte cubique `s = -q - r`. Le centre est `(0, 0)`.
+Chaque plateau est un hexagone de **rayon 4** (taille 9), représenté en **coordonnées axiales `(q, r)`** avec la contrainte cubique `s = -q - r`. Le centre est `(0, 0)`. Un `Board` reçoit sa couche, ses marqueurs (`X`, `S`, `J`) et son orientation ; la **`BoardPile`** assemble les couches actives à partir de `_markers_by_layer` et de `board_orientation`.
 
-**Conversions clés :** `axial_to_2d(q, r)` : projection vers la grille Tkinter (ligne, colonne) ; `from_2d_to_axial(ligne, colonne)` : inverse pour les clics souris ; `hex_distance(q1, r1, q2, r2)` : distance en cases (`max(|dq|, |dr|, |ds|)`) ; `is_straight_line(...)` : vérifie l'alignement sur une des six directions ; `line_path(...)` : cases intermédiaires pour détecter les obstacles ; `rotate_60()` : rotation des marqueurs lors de l'orientation des plateaux.
+**Conversions clés :**
+
+| Méthode | Rôle |
+|---------|------|
+| `axial_to_2d(q, r)` | Projection vers la grille Tkinter (ligne, colonne) |
+| `from_2d_to_axial(ligne, colonne)` | Inverse pour les clics souris |
+| `hex_distance(q1, r1, q2, r2)` | Distance en cases (`max(|dq|, |dr|, |ds|)`) |
+| `is_straight_line(...)` | Vérifie l'alignement sur une des six directions |
+| `line_path(...)` | Cases intermédiaires pour détecter les obstacles |
+| `rotate_60()` | Rotation des marqueurs lors de l'orientation des plateaux |
 
 ### Modélisation 2D pour l'affichage
 
@@ -116,7 +131,7 @@ La logique de jeu s'appuie sur la grille axiale `(q, r)`, mais Tkinter ne dessin
 | `'S'` | Case spéciale |
 | `'J'` | Point de départ du chemin pointillé vers le centre |
 
-Exemple de projection pour la couche "Terre" (chaque ligne = une rangée de la matrice 2D) :
+Exemple de projection pour la couche "Terre" (chaque ligne correspond à une rangée de la matrice 2D) :
 
 ```python
 [None, None, None, None, 0, None, 'X', None, 0, None, 'X', None, 0, None, None, None, None]
@@ -132,7 +147,7 @@ Exemple de projection pour la couche "Terre" (chaque ligne = une rangée de la m
 
 On retrouve ici la structure décalée typique d'un plateau hexagonal vu de face : les cases utiles (`0`, `'X'`, etc.) forment un hexagone, entouré de `None` qui ne sont jamais cliquables.
 
-**Aller-retour entre les deux modèles :** l'interface (`frontend/ui.py`) lit la grille via `to_2d_grid()` pour placer les hexagones et détecter les clics. Quand le joueur clique, les coordonnées `(ligne, colonne)` sont reconverties en `(q, r)` avec `from_2d_to_axial`, puis transmises à la logique de jeu (`try_place_current_pawn`, `try_choose_pawn`, etc.). Toute la validation (distance, ligne droite, obstacles) reste donc calculée en coordonnées axiales ; la grille 2D sert uniquement à l'affichage et à la saisie.
+**Aller-retour entre les deux modèles :** l'interface (`frontend/ui.py`) lit la grille via `to_2d_grid()` pour placer les hexagones et détecter les clics. Quand le joueur clique, les coordonnées `(ligne, colonne)` sont reconverties en `(q, r)` avec `from_2d_to_axial`, puis transmises à la logique de jeu (`try_place_current_pawn`, `try_choose_pawn`, etc.). Toute la validation (distance, ligne droite, obstacles) reste calculée en coordonnées axiales ; la grille 2D sert uniquement à l'affichage et à la saisie.
 
 **Formules de projection :**
 
@@ -145,15 +160,17 @@ Avec `radius = 4` pour un plateau de taille 9, le centre axial `(0, 0)` tombe en
 
 ### Orientation : rotation des marqueurs, pas du plateau entier
 
-Avant le lancement (écran `frontend/board_position.py`), chaque couche peut être orientée par pas de 60 degrés (valeur de 0 à 5 stockée dans `board_orientation`). Visuellement, l'image de prévisualisation du plateau pivote dans le menu, mais côté logique le comportement est différent : **on ne tourne pas la géométrie de l'hexagone**.
+Avant le lancement (écran `frontend/board_position.py`, **mode classique uniquement**), chaque couche visible peut être orientée par pas de 60 degrés (valeur de 0 à 5). Visuellement, l'image de prévisualisation du plateau pivote dans le menu, mais côté logique le comportement est différent : **on ne tourne pas la géométrie de l'hexagone**.
 
-La forme du plateau reste fixe : `_generate_grid()` recrée toujours le même ensemble de cases axiales autour du centre `(0, 0)`. Seuls les **marqueurs** (`'X'` trous, `'S'` cases spéciales, `'J'` chemins pointillés) sont déplacés. La méthode `rotate_60()` applique une rotation de +60 degrés aux coordonnées `(q, r)` de chaque marqueur via `_rotate_axial_60`, puis régénère la grille et réassigne les marqueurs avec `_apply_markers()`.
+La forme du plateau reste fixe : `_generate_grid()` recrée toujours le même ensemble de cases axiales autour du centre `(0, 0)`. Seuls les **marqueurs** (`'X'`, `'S'`, `'J'`) sont déplacés. La méthode `rotate_60()` applique une rotation de +60 degrés aux coordonnées `(q, r)` de chaque marqueur via `_rotate_axial_60`, puis régénère la grille et réassigne les marqueurs avec `_apply_markers()`.
 
-En résumé : les cases libres (`0`) occupent toujours les mêmes positions axiales ; seule la disposition des trous et cases spéciales change par rapport à cette trame fixe. Cela correspond au jeu physique où l'on fait pivoter la couche de tokens sans déplacer la structure hexagonale elle-même.
+Les cases libres (`0`) occupent toujours les mêmes positions axiales ; seule la disposition des marqueurs change par rapport à cette trame fixe.
 
-À la construction (`Board.__init__`), le paramètre `orientation` enchaîne autant d'appels à `rotate_60()` que nécessaire. En mode classique à 4 plateaux, les deux premières couches ("Terre", "Pierre") restent à l'orientation 0 ; seules les quatre couches visibles dans l'écran d'orientation ("Surface" à "Roche mère") sont configurables.
+À la construction (`Board.__init__`), le paramètre `orientation` enchaîne autant d'appels à `rotate_60()` que nécessaire. L'écran d'orientation expose 4 couches (`layer0` à `layer3`). En mode classique à 4 plateaux, `menu._finish_board_position` préfixe `[0, 0]` aux orientations choisies pour fixer Pierre et Terre à 0 ; la liste complète transmise à `Game` contient 6 entiers.
 
-Les plateaux sont empilés dans une **`BoardPile`** : de "Terre" (sommet) à "Roche mère" (base). Le nombre de couches actives dépend du mode (3 à 6 plateaux). Chaque couche possède sa propre disposition de base de trous, cases spéciales et chemins pointillés, définie dans `_markers_by_layer`, puis ajustée selon l'orientation choisie.
+Les modes personnalisés (3 à 6 plateaux) ne passent pas par cet écran : `board_orientation` reste `[0, 0, 0, 0, 0, 0]`.
+
+Les plateaux sont empilés dans une **`BoardPile`**. L'ordre complet des six couches est : Pierre, Terre, Surface, Terre arable, Sous-sol, Roche mère ; seules les `nb_boards` couches du bas de cette liste sont actives. Le plateau du sommet (`get_top()`) est celui sur lequel on joue. Les marqueurs `S` sont retirés de la couche du sommet au moment de la construction (`offset == 0`).
 
 **Référence externe :** [Hexagonal Grids, Red Blob Games](https://www.redblobgames.com/grids/hexagons/)
 
@@ -161,12 +178,12 @@ Les plateaux sont empilés dans une **`BoardPile`** : de "Terre" (sommet) à "Ro
 
 Le multijoueur repose sur des **sockets TCP** en architecture **hôte autoritaire** : l'hôte détient la partie de référence ; les clients envoient leurs intentions, puis appliquent l'état diffusé par le serveur.
 
-### Connexion : comment jouer en réseau
+### Cycle de vie d'une partie en ligne
 
-1. **Hôte :** Menu, Multijoueur, Créer une partie (classique ou personnalisée). L'IP locale est détectée automatiquement (`get_local_ip()` dans `system/server.py`) et affichée dans la console (`IP:5555`). La partager aux autres joueurs.
-2. **Clients :** Menu, Multijoueur, Rejoindre une partie, puis saisir l'IP de l'hôte (ex. `192.168.1.76`).
-3. **Attente du lobby :** le serveur accepte les connexions jusqu'à `nb_joueurs - 1` clients (l'hôte compte comme joueur 0). Tant que le lobby n'est pas complet, la partie ne démarre pas.
-4. **Démarrage :** une fois tous les joueurs connectés, l'hôte initialise la `Game`, envoie un message `game_start` avec l'état initial, puis ouvre l'interface.
+1. **Hôte :** `main.start_host()` ouvre la salle d'attente (`frontend/waiting.py`), démarre `GameServer` dans un thread, affiche l'IP locale et le compteur de joueurs. La console affiche `Partie hébergée - IP à partager : {ip}:5555`.
+2. **Clients :** `main.start_client()` tente `GameClient.connect(host, 5555)`. En cas d'échec, `waiting.show_connection_failed()` affiche Partie non trouvée.
+3. **Lobby :** le serveur accepte jusqu'à `nb_joueurs - 1` clients (l'hôte compte comme joueur 0). Des messages `lobby_update` mettent à jour le compteur sur toutes les machines.
+4. **Démarrage :** lobby complet, l'hôte crée la `Game`, envoie `game_start`, branche `on_action_received` sur l'UI, puis lance l'interface.
 
 **Paramètres réseau fixes :**
 
@@ -188,11 +205,13 @@ Le multijoueur repose sur des **sockets TCP** en architecture **hôte autoritair
 
 ### Flux de communication
 
+![Diagramme de sequence du protocole TCP reseau](Documentation/diagrame_reseau.png)
+
 **Côté serveur (`system/server.py`, `GameServer`) :**
 
 1. `bind` + `listen` sur le port 5555.
-2. `accept()` en boucle jusqu'à atteindre le nombre de clients requis.
-3. Pour chaque connexion : envoi de `{"type": "assign_id", "player_id": N}`, puis lancement d'un thread `handle_client` en écoute.
+2. `accept()` en boucle jusqu'à atteindre le nombre de clients requis ; à chaque connexion, envoi de `assign_id` puis diffusion de `lobby_update`.
+3. Pour chaque connexion : lancement d'un thread `handle_client` en écoute.
 4. Quand un client envoie une action JSON : appel du callback `on_action_received` (branché sur `ui.on_network_message` côté hôte), puis **relai** de l'action à tous les clients via `send_data()`.
 
 **Côté client (`system/client.py`, `GameClient`) :**
@@ -203,9 +222,9 @@ Le multijoueur repose sur des **sockets TCP** en architecture **hôte autoritair
 
 **Orchestration (`main.py`) :**
 
-**`start_host` :** démarre le serveur, crée la `Game`, branche `game_server.on_action_received = game_ui.on_network_message`, envoie `game_start`, lance l'UI avec `role="host"`.
+**`start_host` :** affiche la salle d'attente, démarre le serveur dans un thread d'acceptation, attend le lobby complet, crée la `Game`, branche `game_server.on_action_received = game_ui.on_network_message`, envoie `game_start`, lance l'UI avec `role="host"`.
 
-**`start_client` :** se connecte, attend `game_start` via un `threading.Event`, reconstruit une `Game` à partir des données reçues, lance l'UI avec `role="client"` et `local_player_id` reçu.
+**`start_client` :** affiche la salle d'attente, tente la connexion (erreur affichée si échec), écoute `lobby_update` puis `game_start`, reconstruit une `Game` à partir des données reçues, lance l'UI avec `role="client"` et `local_player_id` reçu. En cas d'échec ou de Retour, `main()` rouvre le menu.
 
 ### Modèle autoritaire et synchronisation
 
@@ -224,14 +243,15 @@ Seul le joueur dont `current_player == local_player_id` peut agir en multijoueur
 | Type | Direction | Contenu / effet |
 |------|-----------|-----------------|
 | `assign_id` | Serveur vers client | `player_id` attribué à la connexion |
+| `lobby_update` | Hôte vers tous | `current`, `max` : joueurs connectés / attendus dans le lobby |
 | `game_start` | Hôte vers tous | `nbplayer`, `nbboard`, `current_player`, `players_disks`, `board_orientation` |
 | `place_pawn` | Joueur vers tous | `row`, `col` : placement en phase initiale |
 | `choose_disk` | Joueur vers tous | `disk_selected` |
 | `choose_pawn` | Joueur vers tous | `row`, `col` |
 | `move_chosen_pawn_to` | Joueur vers tous | `row`, `col` : déplacement validé |
-| `next_player` | Joueur vers tous | Passer le tour (pions bloqués ou dans les trous) |
+| `next_player` | Joueur vers tous | Passer le tour ; déclenche `_finish_disk_cycle` |
 | `replay_turn` | Joueur vers tous | Rejouer après une case `S` |
-| `play_turn` | Joueur vers tous | Reprendre le tour après rejeu |
+| `play_turn` | Joueur vers tous | Reprendre le tour après un passage volontaire (`enter_disk_choice_phase`) |
 | `sync_disks` | Hôte vers tous | `player_id`, `disks` : état des disques après mélange |
 
 Les messages sont sérialisés en JSON, encodés en UTF-8, et délimités par un saut de ligne pour permettre la lecture par buffer (`recv` + split sur `\n`).
@@ -240,9 +260,10 @@ Les messages sont sérialisés en JSON, encodés en UTF-8, et délimités par un
 
 | Fichier | Responsabilité |
 |---------|----------------|
-| `system/server.py` | `GameServer`, `get_local_ip()`, gestion du lobby et du relais |
+| `system/server.py` | `GameServer`, `get_local_ip()`, gestion du lobby, `lobby_update` et relais |
 | `system/client.py` | `GameClient`, connexion et écoute asynchrone |
-| `main.py` | `start_host()`, `start_client()` : initialisation et synchronisation initiale |
+| `main.py` | `start_host()`, `start_client()` : salle d'attente, initialisation et synchronisation |
+| `frontend/waiting.py` | Écran d'attente lobby (IP, compteur, erreur connexion) |
 | `frontend/ui.py` | `_send_network_action()`, `on_network_message()`, `_apply_remote()` : pont UI / réseau |
 | `frontend/menu.py` | Choix hôte / client, saisie IP (`join_online_game`, `check_ip`) |
 
@@ -254,25 +275,26 @@ Sauvegarde par défaut : `save/save.tandc`. Import possible depuis le menu princ
 
 Le chargement reconstruit une instance `Game` complète sans repasser par le menu de configuration.
 
-## Modes de jeu disponibles
+## Modes de jeu (configuration)
 
-| Mode | Connexion | Description |
-|------|-----------|-------------|
-| Classique | Local / Réseau | 4 plateaux, configuration standard |
-| Personnalisé | Local / Réseau | 3 à 6 plateaux, nombre de joueurs au choix |
-| Solo vs bot | Local | 1 joueur humain contre une IA (`entities/bot.py`) |
-| Multijoueur local | Local | Plusieurs joueurs sur le même écran (tour par tour) |
-| Sauvegarde | Aucune | Reprise d'une partie `.tandc` |
+| Mode | `connexionmode` | `gamemode` | Particularités techniques |
+|------|-----------------|------------|---------------------------|
+| Classique local / réseau | `local` / `multiplayer` | `classic` | 4 plateaux, écran d'orientation |
+| Personnalisé local / réseau | `local` / `multiplayer` | `custom` | 3 à 6 plateaux, pas d'écran d'orientation |
+| Solo vs bot | `local` | `solobot` | 1 joueur humain, IA dans `entities/bot.py` |
+| Multijoueur local | `local` | `classic` ou `custom` | `nbplayer > 1`, tour par tour sur un seul écran |
+| Sauvegarde | `save` | - | Reprise d'un fichier `.tandc` via `start_from_save()` |
 
-Avant le lancement (modes classique et solo/réseau classique), l'écran d'**orientation des plateaux** (`frontend/board_position.py`) permet de faire pivoter chaque couche par pas de 60 degrés. Cette rotation déplace uniquement les marqueurs (trous, cases spéciales, chemins pointillés), pas la structure hexagonale du plateau.
+Le menu remplit `game_config` ; `main.py` route vers `start_local`, `start_host`, `start_client` ou `start_from_save` selon ces clés.
 
 ## Interface graphique (Tkinter)
 
-L'interface repose entièrement sur **Tkinter**, bibliothèque standard de Python. Aucun framework UI externe n'est utilisé pour le jeu lui-même (seuls `Pillow` et `pygame` interviennent pour les images du menu d'orientation et la musique d'accueil). Le dossier `frontend/` contient trois modules complémentaires, chacun gérant une fenêtre ou un écran distinct.
+L'interface repose entièrement sur **Tkinter**, bibliothèque standard de Python. Aucun framework UI externe n'est utilisé pour le jeu lui-même (seuls `Pillow` et `pygame` interviennent pour les images du menu d'orientation et la musique d'accueil). Le dossier `frontend/` contient **quatre modules** complémentaires, chacun gérant une fenêtre ou un écran distinct.
 
 | Fichier | Classe | Rôle |
 |---------|--------|------|
 | `menu.py` | `Menu` | Menu principal, choix du mode de jeu, configuration, import de sauvegarde |
+| `waiting.py` | `Waiting` | Salle d'attente multijoueur (lobby réseau avant le lancement) |
 | `ui.py` | `Interface` | Écran de partie : plateau, joueurs, disques, actions |
 | `board_position.py` | `Boards` | Écran d'orientation des plateaux avant le lancement |
 
@@ -299,8 +321,8 @@ Les ressources visuelles (icônes de trous, portraits de joueurs, pelle, sortie)
 | `_build_pages()` | Construit toutes les pages (accueil, local, solo, multijoueur, orientation) |
 | `_build_game_mode_page(...)` | Génère une page de configuration (nombre de joueurs, nombre de plateaux) |
 | `set_connexion_local()` / `set_connexion_multiplayer()` / `set_connexion_solo()` | Enregistre le mode de connexion dans `game_config` |
-| `_show_board_position(...)` | Affiche l'écran d'orientation avant de lancer la partie |
-| `_finish_board_position(orientations)` | Récupère les rotations choisies et finalise la configuration |
+| `_show_board_position(...)` | Affiche l'écran d'orientation avant de lancer la partie (classique uniquement) |
+| `_finish_board_position(orientations)` | Préfixe `[0, 0]` si 4 plateaux, puis finalise la configuration |
 | `_start_game(...)` | Remplit `game_config` (joueurs, plateaux, IP hôte) et ferme le menu |
 | `create_local_classic()` / `create_solo_classic()` / `create_multiplayer_classic()` | Lance le flux classique avec écran d'orientation |
 | `join_online_game()` | Valide l'IP saisie (`check_ip`) et prépare le mode client |
@@ -320,23 +342,38 @@ Le cœur de l'affichage est la méthode **`update_ui()`** : elle reconstruit les
 | `_reload_center_board()` | Détruit et reconstruit le plateau après une descente de couche |
 | `right()` | Affiche la phase, les disques cliquables, les boutons (passer, rejouer, jouer) |
 | `_on_disk_click(idx)` | Gère le choix d'un disque en phase mouvement |
+| `_is_disk_shuffle_authority()` | Indique si cette machine peut mélanger les disques (hôte ou local) |
+| `_send_disk_sync_if_needed()` | Diffuse `sync_disks` après un mélange côté hôte |
 | `change_player_and_update()` / `replay_turn_and_update()` / `play_turn_and_update()` | Boutons de sous-phase, avec envoi réseau si multijoueur |
 | `_schedule_bot_turn()` / `_run_bot_turn()` | Délai puis appel à l'IA (`entities/bot.py`) en mode solo |
-| `_popup_quitter()` / `_quit_and_save()` | Fenêtre modale de sortie, sauvegarde `.tandc` |
+| `_popup_quitter()` / `_quit_and_save()` | Fenêtre modale de sortie ; en ligne : boutons Annuler / Quitter uniquement ; en local : sauvegarde `.tandc` possible |
 | `on_network_message(msg)` / `_apply_remote(msg)` | Réception et application des actions réseau (via `root.after` pour rester thread-safe avec Tkinter) |
 | `displayInterface()` | Lance la boucle `mainloop()` de la partie |
 
 **Gestion des clics sur le plateau :** la fonction interne `gerer_clic` (dans `_setup_center_board`) convertit la position souris en `(row, col)`, puis appelle les méthodes de `entities/game.py`. En multijoueur, le client envoie l'action sans l'appliquer localement ; l'hôte applique et diffuse.
 
+**Phase choix disque :** avant d'afficher les disques cliquables, l'UI appelle `prepare_disk_choice()` pour garantir qu'au moins un disque est disponible face cachée.
+
 **Mécanisme de redessin :** les `Canvas` utilisent l'événement `<Configure>` pour s'adapter à la taille de la fenêtre. Lors d'un simple déplacement de pion, seuls les pions sont redessinés (`_redraw_center_pawns`) pour éviter de reconstruire toute la grille.
+
+### Salle d'attente (`frontend/waiting.py`)
+
+| Méthode | Rôle |
+|---------|------|
+| `update_player_count(current, maximum)` | Met à jour le compteur affiché (`2 / 4`) |
+| `show_connection_failed()` | Affiche "Partie non trouvée" et le bouton Retour (client) |
+| `display()` | Boucle `mainloop()` de la salle d'attente |
+| `close()` | Ferme la fenêtre quand le lobby est complet ou après Retour |
+
+Fenêtre 360x480, même charte graphique que le menu. Peut être lancée seule (`__main__`) ou instanciée par `main.py`.
 
 ### Écran d'orientation (`frontend/board_position.py`)
 
 | Méthode | Rôle |
 |---------|------|
 | `hexa_board(frame, layer)` | Affiche la prévisualisation d'une couche avec boutons de rotation |
-| `rotate(layer, direction)` | Incrémente l'orientation (0 à 5) et pivote l'image Pillow |
-| `get_board_orientation()` | Retourne la liste `[layer0, layer1, layer2, layer3]` transmise à `Game` |
+| `rotate(layer, direction)` | Incrémente l'orientation (0 à 5) et pivote l'image via Pillow (`ImageTk`, redimensionnement 200x200) |
+| `get_board_orientation()` | Retourne `[layer0, layer1, layer2, layer3]` ; le menu complète en 6 valeurs pour le mode classique |
 | `_finish()` | Valide les orientations et rappelle le callback du menu |
 
 Cet écran peut fonctionner seul (`parent=None`) ou être embarqué dans le menu principal via un `Frame`.
