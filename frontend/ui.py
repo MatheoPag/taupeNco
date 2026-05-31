@@ -248,10 +248,10 @@ class Interface:
                 self.frame_center, 
                 text=layer_name,
                 bg=self.colors['background'],
-                font=('18')
+                font=('30')
             )
-        label_layer.pack(side='bottom', pady=90)
-        canvas_circle.pack(fill='both', expand=True)
+        label_layer.pack(side='bottom', pady=20)
+        canvas_circle.pack(fill='both', expand=True, pady=10)
 
 
 
@@ -614,46 +614,41 @@ class Interface:
                     anchor='n'
                 )
 
-                if self.game.has_pawns_on_board:
+                if self.game.has_pawns_on_board(p):
                     
                     ''' Pions restants '''
                     frame_pawns = tk.Frame(canvas_left, bg=self.colors[f'player{pnb}c'])
 
-                    # Ajuste la taille de l'icon en fonction du nombre de taupes 
-                    # (soit en fonction du nombre de joueur)
-                    ''' À ajuster '''
-                    match len(self.game.players):
-                        case 1 : # mode solo
-                            dpxb = 40  
-                        case 2 : 
-                            dpxb = 40
-                        case 3 : 
-                            dpxb = 20
-                        case 4 : 
-                            dpxb = 16
+                    pawns = p.pawns
+                    ligne1 = pawns[:7]
+                    ligne2 = pawns[7:14]
+                    ligne3 = pawns[14:]
 
-                    for pawn in p.pawns:
-                        # Permet de retrouver l'image, peu importe le cwd
-                        # (src: https://youtu.be/sv8YTbeObHQ?si=wzelL9Dx_BkA3ahx)
-                        cwd = os.path.dirname(__file__)
-                        path = f"ressources/icons/{pawn.state}_mole.png"
-                        png_path = os.path.join(cwd, path)
-            
-                        img = tk.PhotoImage(file=png_path).subsample(dpxb)
-                        lbl_pawn = tk.Label(
-                                frame_pawns, 
-                                image=img, 
+                    def make_pawn_row(parent, pawn_list):
+                        row_frame = tk.Frame(parent, bg=self.colors[f'player{pnb}c'])
+                        for pawn in pawn_list:
+                            cwd = os.path.dirname(__file__)
+                            path = f"ressources/icons/{pawn.state}_mole.png"
+                            png_path = os.path.join(cwd, path)
+                            img = tk.PhotoImage(file=png_path).subsample(20)
+                            lbl_pawn = tk.Label(
+                                row_frame,
+                                image=img,
                                 bg=self.colors[f'player{pnb}c']
                             )
-                        
-                        # Empêche le garbage collector de supprimer l'image
-                        lbl_pawn.image = img 
-                        
-                        lbl_pawn.pack(side='left', padx=2)
+                            lbl_pawn.image = img
+                            lbl_pawn.pack(side='left', padx=2)
+                        return row_frame
+
+                    make_pawn_row(frame_pawns, ligne1).pack()
+                    if len(ligne2)>0:
+                        make_pawn_row(frame_pawns, ligne2).pack()
+                    if len(ligne3)>0:
+                        make_pawn_row(frame_pawns, ligne3).pack()
 
                     frame_pawns.place(
                         x=marge + carte_w / 2,
-                        y=y_carte + 35,
+                        y=y_carte + 50,
                         anchor='n'
                     )
 
@@ -662,7 +657,7 @@ class Interface:
                     ''' Jetons déjà dévoilés (sur une seule ligne) '''
                     frame_disks = tk.Frame(canvas_left, bg=self.colors[f'player{pnb}c'])
 
-                    diametre = 35
+                    diametre = 30
                     data = p.disks.get_disks()
 
                     for valeur, visible in data:
@@ -807,7 +802,7 @@ class Interface:
             )
             label_title_phase.place(
                 relx=0.5,
-                y = y0 + sizeW*0.1,
+                y = y0+20 + sizeW*0.1,
                 width= sizeW * 0.9,
                 anchor='center'
             )
@@ -875,7 +870,7 @@ class Interface:
             )
             label_title_subphase.place(
                 relx=0.5,
-                y = y0 + 100,
+                y = y0+65 + 100,
                 width= sizeW * 0.9,
                 anchor='center'
             )
@@ -968,15 +963,15 @@ class Interface:
             on_click = self._on_disk_click if can_choose_disk else None
 
             # Affichage des disques
-            diametre = 60
-            espace_x, espace_y = 85, 90
+            diametre = 55
+            espace_x, espace_y = 70, 85
 
 
             for i, (valeur, visible) in enumerate(data):
                 column = i % 3
                 row = i // 3
-                x = w/4 + espace_x * column
-                y = h/1.5 + espace_y * row
+                x = w/4 - 3 + espace_x * column
+                y = h/1.25 + espace_y * row
 
                 # Rend visible un jeton déjà selectionné
                 if visible:
@@ -1032,14 +1027,14 @@ class Interface:
             pcolor = f"player{pnb}"
             current_disk = f"{player.disks.get_disks()[player.disk_selected][0]}"
             diameter = 85
-            x = 91
+            x = 85
             y = 350
 
             parent.create_oval(
-                x, # 91
-                y, # 350
-                x + diameter, # 191
-                y + diameter, # 450
+                x,                 
+                y, 
+                x + diameter, 
+                y + diameter, 
                 fill = self.colors[pcolor],
                 width = 1
             )
@@ -1144,41 +1139,62 @@ class Interface:
     def _popup_quitter(self):
         popup = tk.Toplevel(self.root)
         popup.title("Quitter")
-        popup.geometry("350x150")
+        popup.geometry("350x180")
         popup.resizable(False, False)
+        popup.config(bg=self.colors['background'])
         popup.grab_set()
 
         tk.Label(
             popup,
             text="Voulez-vous quitter la partie ?",
-            font=('', 12),
+            font=('', 14),
             bg=self.colors['background'],
         ).pack(pady=15)
 
         frame_boutons = tk.Frame(popup, bg=self.colors['background'])
         frame_boutons.pack()
+        frame_boutons.grid_rowconfigure(0, weight=1)
+        frame_boutons.grid_rowconfigure(1, weight=1)
+        frame_boutons.grid_rowconfigure(2, weight=1)
 
         online = self.role in ("host", "client")
 
+        frame_annuler = tk.Frame(frame_boutons, bg=self.colors['border'], padx=2, pady=2)
+        frame_annuler.grid(row=2, column=0, padx=5, pady=5)
         tk.Button(
-            frame_boutons, text="Annuler",
-            bg=self.colors['grey'], bd=0, relief='flat',
+            frame_annuler,
+            text="Annuler",
+            fg=self.colors['border'],
+            bg=self.colors['grey'],
+            bd=0,
+            relief='flat',
             command=popup.destroy
-        ).grid(row=0, column=0, padx=5)
+        ).pack(ipadx=5, ipady=5)
 
+        frame_quitter = tk.Frame(frame_boutons, bg=self.colors['border'], padx=2, pady=2)
+        frame_quitter.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         tk.Button(
-            frame_boutons,
+            frame_quitter,
             text="Quitter" if online else "Quitter sans sauvegarder",
-            bg=self.colors['red'], bd=0, relief='flat',
+            fg=self.colors['border'],
+            bg=self.colors['red'],
+            bd=0,
+            relief='flat',
             command=self.root.destroy
-        ).grid(row=0, column=1, padx=5)
+        ).pack(ipadx=5, ipady=5, fill='x')
 
         if not online:
+            frame_sauvegarder = tk.Frame(frame_boutons, bg=self.colors['border'], padx=2, pady=2)
+            frame_sauvegarder.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
             tk.Button(
-                frame_boutons, text="Quitter et sauvegarder",
-                bg=self.colors['green'], bd=0, relief='flat',
+                frame_sauvegarder,
+                text="Quitter et sauvegarder",
+                fg=self.colors['border'],
+                bg=self.colors['green'],
+                bd=0,
+                relief='flat',
                 command=lambda: self._quit_and_save(popup),
-            ).grid(row=0, column=2, padx=5)
+            ).pack(ipadx=5, ipady=5, fill='x')
 
     def _quit_and_save(self, popup: tk.Toplevel) -> None:
         save_path = filedialog.asksaveasfilename(
