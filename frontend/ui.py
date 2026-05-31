@@ -208,7 +208,7 @@ class Interface:
 
         x = self._center_pad_x + pawn.position[1] * self._center_STEP_X
         y = self._center_pad_y + pawn.position[0] * self._center_STEP_Y
-        outline_color = self._get_selection_outline_color()
+        outline_color = self.colors['red']
 
         self._board_canvas.create_oval(
             x - 18, y - 18, x + 18, y + 18,
@@ -217,17 +217,6 @@ class Interface:
             tags='pawns',
         )
 
-    def _get_selection_outline_color(self) -> str:
-        board_color_key = getattr(self, '_current_board_color', None)
-        if board_color_key in ("layer0", "layer0c"):
-            return self.colors['red']
-        if board_color_key in ("layer1", "layer1c"):
-            return self.colors['black']
-        if board_color_key in ("layer2", "layer2c"):
-            return self.colors['black']
-        if board_color_key in ("layer3", "layer3c"):
-            return self.colors['white']
-        return self.colors['white']
 
     def _setup_center_board(self):
         current_color_int = self.game.boards.get_top().color_int
