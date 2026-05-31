@@ -71,9 +71,9 @@ class Menu:
             'connexionmode' : None, # local, multiplayer ou save
             'gamemode' : None, # classic, solobot OU custom
             'nbboard' : tk.IntVar(value=3), # mode perso : 3 à 6 plateaux
-            'nbplayer' : tk.IntVar(value=3), # 2, 3 ou 4
+            'nbplayer' : tk.IntVar(value=2), # 2, 3 ou 4
             'iphost' : None, # Adresse IP de l'host d'une partie
-            'iptarget' : tk.StringVar(value="127.0.0.1"), # Adresse IP pour rejoindre
+            'iptarget' : tk.StringVar(value="192.1.1.X"), # Adresse IP pour rejoindre
             'board_orientation' : [0, 0, 0, 0, 0, 0],
         }
         self._pending_gamemode = None
@@ -262,12 +262,15 @@ class Menu:
         frame_multiplayer_mode.grid_rowconfigure(0, weight=1)
         frame_multiplayer_mode.grid_rowconfigure(1, weight=1)
         frame_multiplayer_mode.grid_rowconfigure(2, weight=1)
+        frame_multiplayer_mode.grid_rowconfigure(3, weight=1)
+        frame_multiplayer_mode.grid_rowconfigure(4, weight=1)
+        frame_multiplayer_mode.grid_rowconfigure(5, weight=1)
         frame_multiplayer_mode.grid_columnconfigure(0, weight=1)
 
         label_title = tk.Label(
             frame_multiplayer_mode,
             text="Multijoueur en ligne",
-            font=('', 24),
+            font=('', 18),
             bg=self.colors['background'],
         )
         label_title.grid(row=0, column=0, sticky='nsew')
@@ -275,61 +278,64 @@ class Menu:
         label_join = tk.Label(
             frame_multiplayer_mode,
             text="ID d'une partie (host) :",
-            font=('', 16),
+            font=('', 14),
             bg=self.colors['background'],
         )
         label_join.grid(row=1, column=0, sticky='nsew')
-        
+
         self.entry_ip = tk.Entry(
             frame_multiplayer_mode,
-            font=('', 12),
+            font=('', 14),
             textvariable=self.game_config['iptarget'],
+            fg=self.colors['border'],
+            bg=self.colors['layer2c']
         )
-        self.entry_ip.grid(row=3, column=0, sticky='nsew') 
-        
+        self.entry_ip.grid(row=2, column=0, sticky='ew', padx=50, pady=5, ipady=10)
+
         frame_button_join = tk.Frame(
             frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2
         )
-        frame_button_join.grid(row=4, column=0, sticky='nsew')
+        frame_button_join.grid(row=3, column=0, sticky='ew', padx=50, pady=5)
         button_join = tk.Button(
             frame_button_join,
             text="Rejoindre une partie",
             font=('', 16),
-            bg=self.colors['layer0'],
+            fg=self.colors['border'],
+            bg=self.colors['layer2'],
             bd=0,
             relief='flat',
             command=self.join_online_game,
         )
-        button_join.pack()
-        
+        button_join.pack(fill='both', expand=True)
+
         frame_button_create = tk.Frame(
             frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2
         )
-        frame_button_create.grid(row=5, column=0, sticky='nsew')
+        frame_button_create.grid(row=4, column=0, sticky='ew', padx=50, pady=5)
         button_create = tk.Button(
-            frame_button_create ,
+            frame_button_create,
             text="Créer une partie",
             font=('', 16),
-            bg=self.colors['layer0'],
+            fg=self.colors['border'],
+            bg=self.colors['layer2'],
             bd=0,
             relief='flat',
             command=lambda: self.frame_multiplayer_game_mode.tkraise(),
         )
-        button_create.pack()
-        
+        button_create.pack(fill='both', expand=True)
+
         frame_button_back2 = tk.Frame(
             frame_multiplayer_mode, bg=self.colors['border'], padx=2, pady=2
         )
-        frame_button_back2.grid(row=6, column=0, sticky='nsew')
+        frame_button_back2.grid(row=5, column=0, sticky='ew', padx=100, pady=5)
         button_back2 = tk.Button(
             frame_button_back2,
             text="Retour",
-            font=('', 16),
-            bg=self.colors['layer0'],
+            font=('', 12),
             bd=0,
             relief='flat',
         )
-        button_back2.pack()
+        button_back2.pack(fill='both', expand=True)
 
 
         # GESTION DE LA SUPERPOSITION DES COUCHES
@@ -400,141 +406,160 @@ class Menu:
 
 
     def _build_game_mode_page(self, title_text, show_player_count=True):
-        """Construit une page de choix du mode de jeu (classique/personnalisé)."""
         frame = tk.Frame(self.root, width=352, height=472, bg=self.colors['background'])
         frame.grid(row=0, column=0, sticky='nsew')
 
         label_title = tk.Label(
-            frame, text=title_text, font=('', 24), bg=self.colors['background']
+            frame, text=title_text, font=('', 18), bg=self.colors['background']
         )
         label_title.pack()
 
         if show_player_count:
             label_player_title = tk.Label(
                 frame,
-                text="Nombre de joueur : ",
-                font=('', 16),
+                text="Nombre de joueurs : ",
+                font=('', 14),
                 bg=self.colors['background'],
             )
             label_player_title.pack()
 
-            frame_button_player = tk.Frame(
-                    frame, 
-                    bg=self.colors['border'], 
-                    padx=2, pady=2
-                )
-            frame_button_player.pack(padx=20, pady=20)
+            frame_button_player = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
+            frame_button_player.pack(padx=50, pady=5, fill='x', expand=True)
             frame_button_player.grid_rowconfigure(0, weight=1)
+            frame_button_player.grid_columnconfigure(0, weight=1)
+            frame_button_player.grid_columnconfigure(1, weight=1)
             frame_button_player.grid_columnconfigure(2, weight=1)
 
             button_player2 = tk.Radiobutton(
                 frame_button_player,
-                text="j2",
+                text="2",
                 variable=self.game_config['nbplayer'],
-                value=2
+                value=2,
+                bg=self.colors['layer0'],
+                fg=self.colors['border'],
+                selectcolor=self.colors['white']
             )
             button_player3 = tk.Radiobutton(
                 frame_button_player,
-                text="j3",
+                text="3",
                 variable=self.game_config['nbplayer'],
-                value=3
+                value=3,
+                bg=self.colors['layer0'],
+                fg=self.colors['border'],
+                selectcolor=self.colors['white']
             )
             button_player4 = tk.Radiobutton(
                 frame_button_player,
-                text="j4",
+                text="4",
                 variable=self.game_config['nbplayer'],
-                value=4
+                value=4,
+                bg=self.colors['layer0'],
+                fg=self.colors['border'],
+                selectcolor=self.colors['white']
             )
-            button_player2.grid(row=0, column=0)
-            button_player3.grid(row=0, column=1)
-            button_player4.grid(row=0, column=2)
+            button_player2.grid(row=0, column=0, sticky='ew')
+            button_player3.grid(row=0, column=1, sticky='ew')
+            button_player4.grid(row=0, column=2, sticky='ew')
 
         label_gamemode_title = tk.Label(
             frame,
             text="Mode de jeu : ",
-            font=('', 16),
+            font=('', 14),
             bg=self.colors['background'],
         )
         label_gamemode_title.pack()
 
         frame_button_classic = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_classic.pack(padx=20, pady=20)
+        frame_button_classic.pack(padx=50, pady=5, fill='x', expand=True)
         button_classic = tk.Button(
             frame_button_classic,
             text="Classique",
             font=('', 16),
-            bg=self.colors['layer0'],
             bd=0,
             relief='flat',
+            bg=self.colors['layer0c']
         )
-        button_classic.pack()
+        button_classic.pack(fill='both', expand=True)
 
-        # Choix du nombre de plateaux en mode custom
         label_gamemode_custom = tk.Label(
             frame,
             text="Nombre de plateaux\n(uniquement en personnalisé) : ",
-            font=('', 16),
+            font=('', 14),
             bg=self.colors['background'],
         )
         label_gamemode_custom.pack()
 
         frame_button_board = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_board.pack(padx=20, pady=20)
+        frame_button_board.pack(padx=50, pady=5, fill='x', expand=True)
         frame_button_board.grid_rowconfigure(0, weight=1)
+        frame_button_board.grid_columnconfigure(0, weight=1)
+        frame_button_board.grid_columnconfigure(1, weight=1)
+        frame_button_board.grid_columnconfigure(2, weight=1)
         frame_button_board.grid_columnconfigure(3, weight=1)
 
         button_board3 = tk.Radiobutton(
             frame_button_board,
             text="3",
             variable=self.game_config['nbboard'],
-            value=3
+            value=3,
+            bg=self.colors['layer3'],
+            fg=self.colors['white'],
+            selectcolor=self.colors['border']
         )
         button_board4 = tk.Radiobutton(
             frame_button_board,
             text="4",
             variable=self.game_config['nbboard'],
-            value=4
+            value=4,
+            bg=self.colors['layer3'],
+            fg=self.colors['white'],
+            selectcolor=self.colors['border']
         )
         button_board5 = tk.Radiobutton(
             frame_button_board,
             text="5",
             variable=self.game_config['nbboard'],
-            value=5
+            value=5,
+            bg=self.colors['layer3'],
+            fg=self.colors['white'],
+            selectcolor=self.colors['border']
         )
         button_board6 = tk.Radiobutton(
             frame_button_board,
             text="6",
             variable=self.game_config['nbboard'],
-            value=6
+            value=6,
+            bg=self.colors['layer3'],
+            fg=self.colors['white'],
+            selectcolor=self.colors['border']
         )
-        button_board3.grid(row=0, column=0)
-        button_board4.grid(row=0, column=1)
-        button_board5.grid(row=0, column=2)
-        button_board6.grid(row=0, column=3)
+        button_board3.grid(row=0, column=0, sticky='ew')
+        button_board4.grid(row=0, column=1, sticky='ew')
+        button_board5.grid(row=0, column=2, sticky='ew')
+        button_board6.grid(row=0, column=3, sticky='ew')
 
         frame_button_custom = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_custom.pack(padx=20, pady=20)
+        frame_button_custom.pack(padx=50, pady=5, fill='x', expand=True)
         button_custom = tk.Button(
             frame_button_custom,
             text="Personnalisé",
             font=('', 16),
-            bg=self.colors['layer0'],
             bd=0,
             relief='flat',
+            bg=self.colors['layer3c']
         )
-        button_custom.pack()
+        button_custom.pack(fill='both', expand=True)
 
         frame_button_back = tk.Frame(frame, bg=self.colors['border'], padx=2, pady=2)
-        frame_button_back.pack(padx=20, pady=20)
+        frame_button_back.pack(padx=100, pady=5, fill='x', expand=True)
         button_back = tk.Button(
             frame_button_back,
             text="Retour",
-            font=('', 16),
-            bg=self.colors['layer0'],
+            font=('', 12),
             bd=0,
             relief='flat',
         )
-        button_back.pack()
+        button_back.pack(fill='both', expand=True)
 
         return frame, button_classic, button_custom, button_back
 
